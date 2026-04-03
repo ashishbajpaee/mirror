@@ -24,6 +24,10 @@ networkx>=3.1
 
 # --- Explainability ---
 shap>=0.42.0
+lime>=0.2.0.1
+
+# --- Simulation ---
+simpy>=4.0.1
 
 # --- Utilities ---
 tqdm>=4.65.0
