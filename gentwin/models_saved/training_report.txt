@@ -1,0 +1,46 @@
+
+=================================================================
+  ✨ GENTWIN FINAL TRAINING REPORT ✨
+=================================================================
+[ Models F1 Evaluation ]
+ - Variational Autoencoder : N/A
+ - LSTM Sequence Autoencoder : N/A
+
+[ Attack Library Diagnostics ]
+ - Total Consolidated Synthetics Library Limit : 2200 mapped constraints.
+
+[ Top 5 Highest Risk Cyber Arrays Globally ]
+ attack_type target_stage  blindspot_score
+Silent Drift           P5         3.999795
+Silent Drift           P4         3.999794
+Silent Drift           P4         3.999793
+Silent Drift           P4         3.999790
+Silent Drift           P4         3.999790
+
+[ Top 5 Most Vulnerable Structural Sensors ]
+sensor  vuln_score
+FIT101         0.0
+FIT501         0.0
+LIT401         0.0
+  P401         0.0
+  P402         0.0
+
+[ Exported File System Sizes (models_saved/)]
+  - .gitkeep                       | 0.0 KB
+  - attack_library.csv             | 2381.2 KB
+  - attack_library_explained.csv   | 2865.4 KB
+  - cgan_discriminator.pth         | 200.8 KB
+  - cgan_generator.pth             | 1219.5 KB
+  - lstm_ae_best.pth               | 2008.1 KB
+  - lstm_threshold.pkl             | 0.1 KB
+  - scaler.pkl                     | 2.7 KB
+  - sensor_blindspot_scores.csv    | 0.5 KB
+  - sensor_graph.pkl               | 1.0 KB
+  - top_attacks.csv                | 53.7 KB
+  - training_report.txt            | 1.7 KB
+  - vae_best.pth                   | 13606.3 KB
+  - vae_threshold.pkl              | 0.1 KB
+
+=================================================================
+GenTwin ML pipeline complete. Ready for dashboard integration.
+=================================================================
