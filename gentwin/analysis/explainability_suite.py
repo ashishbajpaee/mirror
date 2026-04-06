@@ -73,13 +73,20 @@ def build_gap_explanations(
     predict_fn = _predict_mse_fn(vae)
 
     if HAS_LIME:
-        lime_explainer = LimeTabularExplainer(
-            training_data=flat_norm[:1000],
-            mode="regression",
-            feature_names=[f"f{i}" for i in range(WINDOW_SIZE * 51)],
-            random_state=42,
-            discretize_continuous=True,
-        )
+        try:
+            # Validate training data before initializing LIME
+            if not np.all(np.isfinite(flat_norm[:1000])):
+                print("  ⚠️  LIME disabled: training data contains NaN/Inf values")
+            else:
+                lime_explainer = LimeTabularExplainer(
+                    training_data=flat_norm[:1000],
+                    mode="regression",
+                    feature_names=[f"f{i}" for i in range(WINDOW_SIZE * 51)],
+                    random_state=42,
+                    discretize_continuous=True,
+                )
+        except Exception as e:
+            print(f"  ⚠️  LIME initialization failed: {e}")
 
     shap_texts, lime_texts = [], []
 
@@ -91,8 +98,16 @@ def build_gap_explanations(
         shap_texts.append(shap_res["explanation_text"])
 
         if lime_explainer is not None:
-            exp = lime_explainer.explain_instance(flat, predict_fn, num_features=6)
-            lime_texts.append(" | ".join([f"{a}: {b:.4f}" for a, b in exp.as_list()]))
+            try:
+                # Validate input has no NaN/Inf before passing to LIME
+                if not np.all(np.isfinite(flat)):
+                    lime_texts.append("LIME skipped: input contains NaN/Inf values")
+                else:
+                    exp = lime_explainer.explain_instance(flat, predict_fn, num_features=6)
+                    lime_texts.append(" | ".join([f"{a}: {b:.4f}" for a, b in exp.as_list()]))
+            except Exception as e:
+                # Graceful fallback for LIME numerical issues
+                lime_texts.append(f"LIME explanation failed: {str(e)[:80]}")
         else:
             lime_texts.append("LIME unavailable: install 'lime' to enable local surrogate explanations.")
 

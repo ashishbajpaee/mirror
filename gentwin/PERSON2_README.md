@@ -387,6 +387,29 @@ gaps = identify_security_gaps(
 
 **Fallback**: SHAP explanations still work, LIME column will show "LIME unavailable" message
 
+### Issue: LIME explanation fails with numerical errors
+**Symptoms**: 
+```
+KeyboardInterrupt / _assert_all_finite / NaN or Inf in forward_selection
+```
+
+**Root Cause**: LIME encounters numerical instability with certain attack vectors
+
+**Solution**: ✅ **FIXED in v1.1** - Added robust error handling:
+- Pre-validation of input data for NaN/Inf values
+- Try-catch wrapper around LIME explain_instance
+- Graceful fallback messages instead of crashes
+- SHAP explanations continue working even if LIME fails
+
+**Verification**:
+```bash
+# Quick test of explainability with error handling
+python test_person2_quick.py
+
+# Or run full verification
+verify_person2.bat
+```
+
 ---
 
 ## 📚 References
@@ -455,6 +478,20 @@ python -c "import sys; print(f'Python: {sys.version}'); import torch; print(f'Py
 
 ---
 
-**Last Updated**: 2026-04-03  
-**Version**: 1.0  
+**Last Updated**: 2026-04-05  
+**Version**: 1.1 (LIME error handling fix)  
 **Status**: Production Ready ✅
+
+### Changelog
+
+**v1.1** (2026-04-05):
+- ✅ Fixed LIME numerical stability issues with robust error handling
+- ✅ Added NaN/Inf validation before LIME explanations
+- ✅ Created `test_person2_quick.py` for rapid validation
+- ✅ Created `verify_person2.bat` Windows verification script
+- ✅ Enhanced documentation with troubleshooting guide
+
+**v1.0** (2026-04-03):
+- ✅ Initial Person 2 implementation complete
+- ✅ All 7 pipeline stages operational
+- ✅ SimPy, SHAP, RL, Immunity, DNA, Timeline modules
