@@ -1,11 +1,19 @@
 import { NavLink } from 'react-router-dom';
 
 const navItems = [
-  { label: 'Command Center', to: '/command-center' },
-  { label: 'Attack Theater', to: '/attack-theater' },
-  { label: 'Vulnerability Heatmap', to: '/vulnerability-heatmap' },
-  { label: 'AI Mitigation', to: '/mitigation-engine' },
-  { label: 'MIRROR', to: '/mirror' },
+  { label: 'Command Center', to: '/ops/command' },
+  { label: 'Attack Theater', to: '/ops/attacks' },
+  { label: 'Vulnerability Heatmap', to: '/ops/vulnerabilities' },
+  { label: 'AI Mitigation', to: '/ops/mitigation' },
+  { label: 'Digital Twin', to: '/ops/twin' },
+  { label: 'Security Intel', to: '/ops/security' },
+  { label: 'Timeline', to: '/ops/timeline' },
+  { label: 'MIRROR', to: '/ops/mirror' },
+];
+
+const demoItems = [
+  { label: '🔴 Demo Launcher', to: '/demo' },
+  { label: '🎯 Attack Cards', to: '/demo/cards' },
 ];
 
 function Navbar({
@@ -25,18 +33,20 @@ function Navbar({
           <h1 className="text-2xl font-bold tracking-tight text-cloud">Operational Cyber Twin</h1>
         </div>
 
-        <button
-          type="button"
-          onClick={() => setDemoMode(!demoMode)}
-          className={
-            'mono rounded-lg border px-3 py-2 text-xs uppercase tracking-[0.22em] transition ' +
-            (demoMode
-              ? 'border-amber-300/80 bg-amber-200/20 text-amber-100'
-              : 'border-mint/60 bg-mint/10 text-mint')
-          }
-        >
-          Demo Mode: {demoMode ? '3x Live' : 'Normal'}
-        </button>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            onClick={() => setDemoMode(!demoMode)}
+            className={
+              'mono rounded-lg border px-3 py-2 text-xs uppercase tracking-[0.22em] transition ' +
+              (demoMode
+                ? 'border-amber-300/80 bg-amber-200/20 text-amber-100'
+                : 'border-mint/60 bg-mint/10 text-mint')
+            }
+          >
+            Demo Mode: {demoMode ? '3x Live' : 'Normal'}
+          </button>
+        </div>
       </div>
 
       <nav className="mb-3 flex flex-wrap gap-2">
@@ -50,6 +60,18 @@ function Navbar({
                 ? 'border-mint bg-mint/20 text-cloud'
                 : 'border-white/15 bg-white/5 text-slate-200 hover:border-white/35 hover:bg-white/10')
             }
+          >
+            {item.label}
+          </NavLink>
+        ))}
+
+        <span className="mx-1 self-center text-white/20">|</span>
+
+        {demoItems.map((item) => (
+          <NavLink
+            key={item.to}
+            to={item.to}
+            className="rounded-lg border border-red-400/30 bg-red-950/30 px-3 py-2 text-sm text-red-200 transition hover:border-red-400/60 hover:bg-red-900/30"
           >
             {item.label}
           </NavLink>

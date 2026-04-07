@@ -75,6 +75,24 @@
           "Feature_4": 2.1113
         }
       }
+    },
+    {
+      "timestamp": "2026-04-07T09:04:49.983878+00:00",
+      "type": "probe",
+      "target_sensors": [
+        "Feature_7"
+      ],
+      "command": "set Feature_7 to 0.95",
+      "response_observed": {
+        "alerts": [],
+        "sample": {
+          "Feature_0": 995.4493,
+          "Feature_1": 1.0384,
+          "Feature_2": 1.0289,
+          "Feature_3": 0.504,
+          "Feature_4": 2.1113
+        }
+      }
     }
   ]
 }

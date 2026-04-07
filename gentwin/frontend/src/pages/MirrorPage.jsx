@@ -1,211 +1,140 @@
 import { useEffect, useMemo, useState } from 'react';
+import { useOutletContext } from 'react-router-dom';
 import { api, getWsBaseUrl } from '../api/client';
 import SensorGrid from '../components/SensorGrid';
+import { Terminal, Shield, Activity, Fingerprint } from 'lucide-react';
 
 function extractSensorsFromCommand(commandText) {
   const sensors = [];
   const pattern = /(Feature_\d+)/gi;
   let match = pattern.exec(commandText);
-  while (match) {
-    sensors.push(match[1]);
-    match = pattern.exec(commandText);
-  }
+  while (match) { sensors.push(match[1]); match = pattern.exec(commandText); }
   return sensors;
 }
 
-function MirrorPage({ demoMode }) {
+function MetricCard({ title, value, icon: Icon, valueColor, t }) {
+  return (
+    <div className="p-4 flex items-center justify-between" style={{ backgroundColor: t.surface, border: `0.5px solid ${t.border}`, borderRadius: 8 }}>
+      <div>
+        <p className="text-[12px] font-medium uppercase tracking-wider mb-1" style={{ color: t.textMuted }}>{title}</p>
+        <p className="text-[28px] font-semibold tracking-tight" style={{ color: valueColor || t.text }}>{value}</p>
+      </div>
+      <div className="w-10 h-10 rounded-full flex items-center justify-center" style={{ backgroundColor: t.inputBg }}>
+        <Icon size={20} style={{ color: t.textMuted }} />
+      </div>
+    </div>
+  );
+}
+
+export default function MirrorPage() {
+  const { demoMode, isDark, t } = useOutletContext();
   const [decoyReadings, setDecoyReadings] = useState({});
   const [realReadings, setRealReadings] = useState({});
   const [mirrorStatus, setMirrorStatus] = useState(null);
   const [commandText, setCommandText] = useState('set Feature_7 to 0.95');
   const [commandResult, setCommandResult] = useState('');
-  const [revealed, setRevealed] = useState(false);
 
   useEffect(() => {
     const speed = demoMode ? 3 : 1;
-
-    const decoySocket = new WebSocket(
-      getWsBaseUrl() + '/ws/decoy?attack_id=0&speed=' + String(speed) + '&duration=720'
-    );
-    const realSocket = new WebSocket(
-      getWsBaseUrl() + '/ws/real?attack_id=0&speed=' + String(speed) + '&duration=720'
-    );
-
-    decoySocket.onmessage = (event) => {
-      try {
-        const payload = JSON.parse(event.data);
-        setDecoyReadings(payload.sensor_readings || {});
-      } catch (error) {
-        // Ignore malformed payloads.
-      }
-    };
-
-    realSocket.onmessage = (event) => {
-      try {
-        const payload = JSON.parse(event.data);
-        setRealReadings(payload.sensor_readings || {});
-      } catch (error) {
-        // Ignore malformed payloads.
-      }
-    };
-
-    return () => {
-      decoySocket.close();
-      realSocket.close();
-    };
+    const decoySocket = new WebSocket(getWsBaseUrl() + '/ws/decoy?attack_id=0&speed=' + speed + '&duration=720');
+    const realSocket = new WebSocket(getWsBaseUrl() + '/ws/real?attack_id=0&speed=' + speed + '&duration=720');
+    decoySocket.onmessage = (e) => { try { setDecoyReadings(JSON.parse(e.data).sensor_readings || {}); } catch {} };
+    realSocket.onmessage = (e) => { try { setRealReadings(JSON.parse(e.data).sensor_readings || {}); } catch {} };
+    return () => { decoySocket.close(); realSocket.close(); };
   }, [demoMode]);
 
   useEffect(() => {
     let cancelled = false;
-
-    const pullStatus = async () => {
-      try {
-        const response = await api.get('/mirror/status');
-        if (!cancelled) {
-          setMirrorStatus(response.data);
-        }
-      } catch (error) {
-        if (!cancelled) {
-          setMirrorStatus(null);
-        }
-      }
+    const pull = async () => {
+      try { const r = await api.get('/mirror/status'); if (!cancelled) setMirrorStatus(r.data); }
+      catch { if (!cancelled) setMirrorStatus(null); }
     };
-
-    pullStatus();
-    const timer = setInterval(pullStatus, 3000);
-
-    return () => {
-      cancelled = true;
-      clearInterval(timer);
-    };
+    pull();
+    const timer = setInterval(pull, 3000);
+    return () => { cancelled = true; clearInterval(timer); };
   }, []);
 
   const submitCommand = async () => {
     try {
       const sensors = extractSensorsFromCommand(commandText);
-      const response = await api.post('/attacker/probe', {
-        query_type: 'probe',
-        sensors_queried: sensors,
-        command_sent: commandText,
-      });
-
-      setCommandResult('Probe intercepted and redirected to fake plant.');
-      setMirrorStatus((current) => {
-        if (!current) {
-          return current;
-        }
-        return {
-          ...current,
-          attacker_profile: response.data.attacker_profile,
-        };
-      });
-    } catch (error) {
-      setCommandResult('Probe failed. Ensure backend API is running.');
-    }
+      const response = await api.post('/attacker/probe', { query_type: 'probe', sensors_queried: sensors, command_sent: commandText });
+      setCommandResult('Probe intercepted and captured.');
+      setMirrorStatus((c) => c ? { ...c, attacker_profile: response.data.attacker_profile } : c);
+    } catch { setCommandResult('Probe failed. Ensure connection.'); }
   };
 
-  const renderedDecoy = useMemo(() => {
-    if (revealed) {
-      return realReadings;
-    }
-    return decoyReadings;
-  }, [revealed, decoyReadings, realReadings]);
+  const cardStyle = { backgroundColor: t.surface, border: `0.5px solid ${t.border}`, borderRadius: 8 };
+  const innerBg = { backgroundColor: isDark ? '#1e293b' : '#F8FAFC', border: `0.5px solid ${t.border}`, borderRadius: 6 };
 
   return (
-    <section className="space-y-4">
-      <div className="glass-panel rounded-xl p-4">
-        <h3 className="text-lg font-semibold">MIRROR Two-Screen Demo</h3>
-        <p className="mono text-xs uppercase tracking-[0.2em] text-slate-300">
-          Left: attacker decoy feed | Right: blue team real plant
-        </p>
+    <div className="space-y-6 max-w-7xl mx-auto pb-10">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+        <MetricCard title="Active Session" value={mirrorStatus?.session_id ? mirrorStatus.session_id.substring(0,6) : 'None'} icon={Activity} valueColor={mirrorStatus?.session_id ? '#2563EB' : undefined} t={t} />
+        <MetricCard title="Patches Deployed" value={mirrorStatus?.patches_deployed || 0} icon={Shield} t={t} />
+        <MetricCard title="Attacker Archetype" value={mirrorStatus?.attacker_profile?.archetype || 'Unknown'} icon={Fingerprint} t={t} />
+        <MetricCard title="Genome Confidence" value={mirrorStatus?.attacker_profile?.confidence || '--'} icon={Terminal} valueColor="#F59E0B" t={t} />
       </div>
 
-      <div className="grid gap-4 xl:grid-cols-[1fr_auto_1fr]">
-        <div className="rounded-xl border border-red-300/40 bg-red-950/20 p-3">
-          <h4 className="mono text-xs uppercase tracking-[0.22em] text-red-200">Attacker Terminal</h4>
-          <div className="mt-2 grid gap-2">
-            <textarea
-              value={commandText}
-              onChange={(event) => setCommandText(event.target.value)}
-              rows={2}
-              className="w-full resize-none rounded-lg border border-red-200/35 bg-black/35 p-2 text-sm text-red-100"
-            />
-            <button
-              type="button"
-              onClick={submitCommand}
-              className="rounded-lg border border-red-200/70 bg-red-300/25 px-3 py-2 font-semibold text-red-100"
-            >
-              Send Probe
-            </button>
-            {commandResult ? <p className="text-sm text-red-100">{commandResult}</p> : null}
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+        {/* Attacker */}
+        <div className="p-5 flex flex-col min-h-[600px]" style={cardStyle}>
+          <div className="flex items-center gap-2 mb-4 pb-3" style={{ borderBottom: `0.5px solid ${t.border}` }}>
+            <div className="w-2 h-2 rounded-full animate-pulse" style={{ backgroundColor: '#EF4444' }}></div>
+            <h2 className="text-[14px] font-semibold" style={{ color: t.text }}>Attacker Telemetry Hook</h2>
+            <span className="ml-auto text-[11px] font-medium px-2 py-0.5 rounded-md" style={{ backgroundColor: isDark ? '#1e293b' : '#F1F5F9', color: t.textMuted }}>Environment: Decoy</span>
           </div>
 
-          <div className="mt-3">
-            <SensorGrid sensorReadings={renderedDecoy} blindspotScores={{}} compact />
-          </div>
-        </div>
-
-        <div className="flex items-center justify-center">
-          <div className="rounded-full border border-white/30 bg-black/25 px-4 py-16 text-center">
-            <p className="mono text-xs uppercase tracking-[0.3em] text-amber-200">Attacker Believes This Is Real</p>
-          </div>
-        </div>
-
-        <div className="rounded-xl border border-cyan-300/40 bg-cyan-950/20 p-3">
-          <h4 className="mono text-xs uppercase tracking-[0.22em] text-cyan-100">Mirror Control</h4>
-          <div className="mt-2 grid gap-2 md:grid-cols-2">
-            <div className="rounded-lg border border-cyan-100/20 bg-black/20 p-2 text-sm text-cyan-100">
-              Session: {mirrorStatus?.session_id || 'N/A'}
-            </div>
-            <div className="rounded-lg border border-cyan-100/20 bg-black/20 p-2 text-sm text-cyan-100">
-              Patches Deployed: {mirrorStatus?.patches_deployed || 0}
+          <div className="space-y-4 mb-4">
+            <div>
+              <label className="block text-[12px] mb-1" style={{ color: t.textMuted }}>Execute Remote Probe</label>
+              <div className="flex gap-2">
+                <input type="text" className="flex-1 px-3 py-1.5 rounded-md font-mono text-[13px] focus:outline-none focus:ring-1 focus:ring-[#2563EB]"
+                  style={{ backgroundColor: t.inputBg, border: `0.5px solid ${t.border}`, color: t.text }}
+                  value={commandText} onChange={(e) => setCommandText(e.target.value)}
+                />
+                <button onClick={submitCommand} className="px-4 py-1.5 rounded-md text-[13px] font-medium text-white hover:opacity-90 transition" style={{ backgroundColor: '#2563EB' }}>Execute</button>
+              </div>
+              {commandResult && <p className="mt-1.5 text-[12px]" style={{ color: '#EF4444' }}>{commandResult}</p>}
             </div>
           </div>
 
-          <div className="mt-3">
-            <SensorGrid sensorReadings={realReadings} blindspotScores={{}} compact />
+          <div className="flex-1 rounded-md p-4" style={innerBg}>
+            <h3 className="text-[11px] uppercase tracking-wider mb-3" style={{ color: t.textMuted }}>Simulated Feedback Stream</h3>
+            <SensorGrid sensorReadings={decoyReadings} blindspotScores={{}} compact isDark={isDark} t={t} />
+          </div>
+        </div>
+
+        {/* Defender */}
+        <div className="p-5 flex flex-col min-h-[600px]" style={cardStyle}>
+          <div className="flex items-center gap-2 mb-4 pb-3" style={{ borderBottom: `0.5px solid ${t.border}` }}>
+            <div className="w-2 h-2 rounded-full" style={{ backgroundColor: '#10B981' }}></div>
+            <h2 className="text-[14px] font-semibold" style={{ color: t.text }}>True Plant State</h2>
+            <span className="ml-auto text-[11px] font-medium px-2 py-0.5 rounded-md" style={{ backgroundColor: isDark ? 'rgba(16,185,129,0.1)' : '#ECFDF5', color: '#10B981', border: `0.5px solid ${isDark ? 'rgba(16,185,129,0.2)' : '#A7F3D0'}` }}>Secure Operations</span>
           </div>
 
-          <div className="mt-3 rounded-lg border border-cyan-200/25 bg-black/25 p-2 text-sm">
-            <p className="font-semibold text-cyan-100">Attacker Genome Profile</p>
-            <p className="text-cyan-50">
-              {mirrorStatus?.attacker_profile?.archetype || 'Waiting for actions'}
-            </p>
-            <p className="mono text-xs text-cyan-200">
-              Confidence: {mirrorStatus?.attacker_profile?.confidence || '--'}
-            </p>
+          <div className="flex-1 rounded-md p-4 mb-4" style={innerBg}>
+            <h3 className="text-[11px] uppercase tracking-wider mb-3" style={{ color: t.textMuted }}>Protected Production Array</h3>
+            <SensorGrid sensorReadings={realReadings} blindspotScores={{}} compact isDark={isDark} t={t} />
           </div>
 
-          <div className="mt-3 rounded-lg border border-white/15 bg-black/30 p-2 text-xs text-slate-200">
-            <p className="mono uppercase tracking-[0.2em] text-slate-300">Recorder Log</p>
-            <div className="mt-2 max-h-40 overflow-auto space-y-1">
-              {(mirrorStatus?.recent_actions || []).slice(-12).map((item, idx) => (
-                <p key={String(idx) + item.timestamp} className="mono text-[11px] text-slate-300">
-                  {item.timestamp} | {item.type} | {(item.target_sensors || []).join(', ')}
-                </p>
-              ))}
+          <div>
+            <h3 className="text-[12px] font-medium mb-2" style={{ color: t.textSecondary }}>Mirror Activity Log</h3>
+            <div className="h-32 overflow-y-auto rounded-md p-2" style={{ backgroundColor: t.surface, border: `0.5px solid ${t.border}` }}>
+              {(!mirrorStatus?.recent_actions || mirrorStatus.recent_actions.length === 0) ? (
+                <div className="text-[12px] text-center py-4" style={{ color: t.textMuted }}>No events recorded</div>
+              ) : (
+                mirrorStatus.recent_actions.slice(-10).map((item, idx) => (
+                  <div key={`${idx}-${item.timestamp}`} className="flex items-center gap-3 py-1.5" style={{ borderBottom: `0.5px solid ${isDark ? '#1e293b50' : '#F8FAFC'}` }}>
+                    <span className="font-mono text-[11px] w-20" style={{ color: t.textMuted }}>{item.timestamp}</span>
+                    <span className="text-[11px] font-medium" style={{ color: item.type === 'attack_started' ? '#EF4444' : '#2563EB' }}>{item.type}</span>
+                    <span className="text-[11px] truncate" style={{ color: t.textSecondary }}>Target: {(item.target_sensors || []).join(', ')}</span>
+                  </div>
+                ))
+              )}
             </div>
           </div>
         </div>
       </div>
-
-      <div className="glass-panel rounded-xl p-4">
-        <button
-          type="button"
-          onClick={() => setRevealed((current) => !current)}
-          className="rounded-lg border border-amber-200/75 bg-amber-300/25 px-4 py-2 font-semibold text-amber-100"
-        >
-          {revealed ? 'Hide MIRROR' : 'Reveal MIRROR'}
-        </button>
-
-        {revealed ? (
-          <p className="mt-2 text-sm text-amber-100">
-            Attacker achieved nothing. Real plant untouched. Full strategy captured.
-          </p>
-        ) : null}
-      </div>
-    </section>
+    </div>
   );
 }
-
-export default MirrorPage;

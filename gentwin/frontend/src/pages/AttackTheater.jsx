@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Plot from 'react-plotly.js';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useOutletContext } from 'react-router-dom';
 import { api, getWsBaseUrl } from '../api/client';
 import GnnRelationshipPanel from '../components/GnnRelationshipPanel';
 import SensorGrid from '../components/SensorGrid';
@@ -57,7 +57,8 @@ function meanEdgeMap(edgeMaps) {
   return out;
 }
 
-function AttackTheater({ demoMode }) {
+function AttackTheater() {
+  const { demoMode } = useOutletContext();
   const [searchParams] = useSearchParams();
   const [attacks, setAttacks] = useState([]);
   const [blindspotScores, setBlindspotScores] = useState({});
