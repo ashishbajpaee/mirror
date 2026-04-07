@@ -1,105 +1,134 @@
-# GenTwin Mirror Demo Stack
+# GenTwin Run Guide
 
-This repository contains two runnable parts:
+This project has two main parts:
 
-1. Demo stack (FastAPI backend + React frontend) for judge presentation
-2. Analysis pipeline (Person 2 modules) for deeper threat analysis artifacts
+1. Demo stack (FastAPI backend + React frontend)
+2. Analysis pipeline (Person 2 modules)
 
-## 1) Demo Stack Quick Start (Recommended for Presentation)
+This README gives the current working run flow for this branch.
 
-### Prerequisites
+## 1) Prerequisites
+
 - Python 3.10+
 - Node.js 18+
 
-### A. Backend
+## 2) Install Dependencies
 
 From `gentwin/`:
 
 ```powershell
 cd C:\Users\Asus\projects\IITK_PS6\mirror\gentwin
-
-# Optional: activate your venv first
-# C:\Users\Asus\projects\IITK_PS6\.venv\Scripts\Activate.ps1
-
-pip install -r requirements.txt
-uvicorn backend.attacker_terminal:app --host 0.0.0.0 --port 8000 --reload
+python -m pip install -r requirements.txt
 ```
 
-Health check:
-
-```powershell
-Invoke-RestMethod http://127.0.0.1:8000/api/health
-```
-
-### B. Frontend
-
-In a second terminal:
+Frontend dependencies:
 
 ```powershell
 cd C:\Users\Asus\projects\IITK_PS6\mirror\gentwin\frontend
 npm install
-npm run dev
 ```
 
-Open the printed Vite URL (usually `http://localhost:5173`).
+## 3) Prepare SWaT A9 Dataset (Attack/Normal CSV Split)
 
-## 2) Frontend Environment Configuration
+If your SWaT A9 folder is:
+`C:/Users/Asus/projects/IITK_PS6/swat/SWaT.A9_Nov 2022`
 
-The frontend now supports configurable API and WebSocket hosts.
-
-- `VITE_API_BASE_URL` (default: `http://localhost:8000`)
-- `VITE_WS_BASE_URL` (optional, default derived from API URL)
-
-Example:
+run:
 
 ```powershell
-cd C:\Users\Asus\projects\IITK_PS6\mirror\gentwin\frontend
-$env:VITE_API_BASE_URL = "http://127.0.0.1:8000"
-npm run dev
+cd C:\Users\Asus\projects\IITK_PS6\mirror\gentwin
+python prepare_swat_a9_labels.py --dataset-dir "C:/Users/Asus/projects/IITK_PS6/swat/SWaT.A9_Nov 2022" --output-dir data_files --fallback-normal-file "10-Nov-2022_1100_1200.csv"
 ```
 
-## 3) Main Demo Routes
+Generated files:
 
-- `/` Defender dashboard
-- `/attacker` Attacker terminal
-- `/demo` Three-screen launcher
-- `/demo/control` Hidden presenter controls
-- `/demo/results` Final result sequence
-- `/attack-cards` Attack panel
+- `data_files/SWaT_A9_Labeled.csv`
+- `data_files/SWaT_Normal.csv`
+- `data_files/SWaT_Attack.csv`
 
-## 4) Optional: Person 2 Analysis Pipeline
+Note: If strict rule matching finds zero normal rows, `--fallback-normal-file` forces one source file to act as weak-normal so the training pipeline can run.
 
-Run from `gentwin/`:
+## 4) Run Analysis Pipeline
+
+Run Person 2 pipeline from `gentwin/`:
 
 ```powershell
 python analysis/run_person2.py
 ```
 
-Artifacts are written to `models_saved/` (impact analysis, security gaps, explainability, RL table, immunity, DNA, timeline).
+Main artifacts are written to `models_saved/`, including:
 
-## 5) Troubleshooting
+- `impact_analysis.csv`
+- `security_gaps.csv`
+- `security_gaps_explained.csv`
+- `rl_q_table.csv`
+- `immunity_scores.csv`
+- `attack_dna.csv`
+- `incident_timeline.csv`
 
-- Backend not reachable:
-  - Confirm `uvicorn` is running on port `8000`
-  - Check `http://127.0.0.1:8000/api/health`
-- Frontend loads but no live data:
-  - Verify backend terminal has no import/runtime errors
-  - Check browser console for failed `/api/*` or `/ws` requests
-- Port conflict:
-  - Start backend on another port and set `VITE_API_BASE_URL` accordingly
+## 5) Run Backend
 
-## 6) Automated Pre-Demo Validation
-
-Before presenting, run one command to verify key API routes and stream readiness:
+Recommended (unified API):
 
 ```powershell
 cd C:\Users\Asus\projects\IITK_PS6\mirror\gentwin
-python validate_demo_stack.py
+python start_backend.py
 ```
 
-Optional flags:
+Equivalent command:
 
 ```powershell
-python validate_demo_stack.py --base-url http://127.0.0.1:8000 --timeout 8
-python validate_demo_stack.py --skip-websocket
+uvicorn backend.main:app --host 127.0.0.1 --port 8000 --reload
 ```
+
+Health checks:
+
+```powershell
+Invoke-RestMethod http://127.0.0.1:8000/health
+Invoke-RestMethod http://127.0.0.1:8000/api/health
+```
+
+## 6) Run Frontend
+
+In a second terminal:
+
+```powershell
+cd C:\Users\Asus\projects\IITK_PS6\mirror\gentwin\frontend
+$env:VITE_API_BASE_URL = "http://127.0.0.1:8000"
+npm run dev -- --host 127.0.0.1 --port 5173
+```
+
+Open `http://127.0.0.1:5173`.
+
+## 7) Demo Routes
+
+- `/` Defender dashboard
+- `/attacker` Attacker terminal
+- `/demo` Three-screen launcher
+- `/demo/control` Presenter controls
+- `/demo/results` Final result sequence
+- `/attack-cards` Attack panel
+
+## 8) Pre-Demo Validation
+
+```powershell
+cd C:\Users\Asus\projects\IITK_PS6\mirror\gentwin
+python validate_demo_stack.py --base-url http://127.0.0.1:8000 --timeout 8
+```
+
+## 9) Troubleshooting
+
+- `ModuleNotFoundError: No module named 'simpy'`
+  - Run `python -m pip install simpy`
+
+- Frontend exits immediately with code 1
+  - Make sure you run from `gentwin/frontend`
+  - Run `npm install` again
+  - Confirm `VITE_API_BASE_URL` points to the running backend
+
+- Backend starts but frontend has no live data
+  - Check backend logs for route/import errors
+  - Verify `http://127.0.0.1:8000/api/health` returns JSON
+
+- `run_full_pipeline.py` fails due to missing old scripts
+  - Use `analysis/run_person2.py` in this branch
