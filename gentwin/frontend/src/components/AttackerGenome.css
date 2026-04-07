@@ -1,0 +1,200 @@
+/* ═══════════════════════════════════════════════════════════
+   AttackerGenome.css — Dark Amber Aesthetic
+   ═══════════════════════════════════════════════════════════ */
+
+.genome-panel {
+  background: #0d0d0d;
+  color: #f5a623;
+  font-family: 'Fira Code', 'Courier New', monospace;
+  font-size: 13px;
+  border: 1px solid #f5a62344;
+  border-radius: 6px;
+  overflow: hidden;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.genome-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  background: linear-gradient(180deg, #1f1406 0%, #0d0d0d 100%);
+  border-bottom: 1px solid #f5a62333;
+}
+
+.genome-icon {
+  font-size: 24px;
+}
+
+.genome-header h2 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  color: #f5a623;
+  font-family: 'Inter', sans-serif;
+}
+
+.genome-header p {
+  margin: 2px 0 0;
+  font-size: 11px;
+  color: #f5a62388;
+  font-family: 'Inter', sans-serif;
+}
+
+.box-label {
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: #f5a62388;
+  font-family: 'Inter', sans-serif;
+  margin-bottom: 4px;
+}
+
+/* Base sections */
+.genome-panel > div:not(.genome-header) {
+  padding: 12px 16px;
+  border-bottom: 1px dashed #f5a62322;
+}
+.genome-panel > div:last-child {
+  border-bottom: none;
+}
+
+/* ── Top Row (Profile & Confidence) ── */
+.genome-top-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  background: #111;
+}
+
+.profile-name {
+  font-size: 16px;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 4px;
+  transition: color 0.3s ease;
+}
+
+.analyzing-text {
+  color: #f5a62388;
+  animation: blink 1.5s infinite;
+}
+
+.confidence-value {
+  font-size: 16px;
+  font-weight: 700;
+  color: #ffffff;
+  margin-bottom: 4px;
+}
+
+.confidence-bar-bg {
+  height: 8px;
+  background: #222;
+  border-radius: 4px;
+  overflow: hidden;
+  margin-bottom: 4px;
+}
+
+.confidence-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #f5a623, #ffd166);
+  border-radius: 4px;
+  transition: width 0.5s ease;
+}
+
+.confidence-bar-fill.locked {
+  background: linear-gradient(90deg, #00ff41, #3fb950);
+}
+
+.locked-msg {
+  font-size: 10px;
+  color: #00ff41;
+  font-family: 'Inter', sans-serif;
+}
+
+/* Risk Levels */
+.risk-label {
+  font-family: 'Inter', sans-serif;
+  font-size: 11px;
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: 3px;
+  display: inline-block;
+}
+.risk-low { color: #00ff41; background: #00ff4122; }
+.risk-medium { color: #f5a623; background: #f5a62322; }
+.risk-high { color: #ff6644; background: #ff664422; }
+.risk-critical { 
+  color: #ff4444; 
+  background: #ff444422;
+  animation: bg-pulse-red 1s infinite alternate;
+}
+
+/* ── Dimensions ── */
+.dimension-row {
+  display: grid;
+  grid-template-columns: 120px 105px 1fr;
+  align-items: center;
+  gap: 8px;
+  padding: 4px 0;
+}
+.dim-label {
+  color: #ccc;
+}
+.dim-blocks {
+  color: #f5a623;
+  letter-spacing: 1px;
+}
+.dim-value {
+  color: #fff;
+}
+
+/* ── Insight & Response ── */
+.genome-insight p {
+  margin: 0;
+  color: #e6edf3;
+  font-style: italic;
+  line-height: 1.4;
+}
+
+.genome-response ul {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.genome-response li {
+  color: #ff6644;
+  margin-bottom: 4px;
+  line-height: 1.4;
+}
+
+/* ── Timeline ── */
+.genome-timeline {
+  flex: 1;
+  overflow-y: auto;
+}
+.timeline-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.timeline-item {
+  color: #888;
+}
+.timeline-current {
+  color: #f5a623;
+  font-weight: 700;
+}
+
+/* Animations */
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+@keyframes bg-pulse-red {
+  from { background: #ff444422; }
+  to { background: #ff444455; }
+}

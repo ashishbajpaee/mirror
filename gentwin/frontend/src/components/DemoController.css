@@ -1,0 +1,272 @@
+.controller-root {
+  background: #0d1117;
+  color: #c9d1d9;
+  font-family: 'Inter', sans-serif;
+  min-height: 100vh;
+  padding: 32px;
+}
+
+.controller-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  border-bottom: 2px solid #21262d;
+  padding-bottom: 16px;
+  margin-bottom: 32px;
+}
+
+.controller-header h1 {
+  font-size: 24px;
+  color: #e5a50a;
+  margin: 0;
+  letter-spacing: 2px;
+}
+
+.hidden-badge {
+  background: #f8514922;
+  color: #f85149;
+  padding: 6px 12px;
+  border: 1px solid #f85149;
+  border-radius: 4px;
+  font-size: 11px;
+  font-weight: bold;
+}
+
+.controller-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+}
+
+.moments-panel h2, .status-panel h3 {
+  font-size: 16px;
+  color: #8b949e;
+  border-bottom: 1px solid #30363d;
+  padding-bottom: 8px;
+  margin-bottom: 16px;
+}
+
+.trigger-list {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.moment-btn {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  background: #161b22;
+  border: 1px solid #30363d;
+  padding: 16px 24px;
+  font-size: 16px;
+  color: #fff;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+  font-weight: 600;
+  text-align: left;
+}
+
+.moment-btn:hover {
+  background: #21262d;
+}
+
+.moment-btn.active {
+  border-color: #3fb950;
+  background: #3fb95022;
+  box-shadow: 0 0 16px rgba(63, 185, 80, 0.2);
+}
+
+.moment-num {
+  background: #30363d;
+  color: #fff;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.moment-btn.active .moment-num {
+  background: #3fb950;
+  color: #000;
+}
+
+.dur {
+  color: #8b949e;
+  font-weight: normal;
+  font-size: 13px;
+  margin-left: auto;
+}
+
+.auto-advance {
+  margin-top: 24px;
+  padding: 16px;
+  background: #161b22;
+  border-radius: 6px;
+  color: #e5a50a;
+}
+
+.status-box {
+  background: #161b22;
+  border: 1px solid #30363d;
+  padding: 24px;
+  border-radius: 6px;
+  margin-bottom: 24px;
+}
+
+.status-large {
+  font-size: 32px;
+  font-weight: 800;
+  color: #3fb950;
+  margin-bottom: 24px;
+}
+
+.progress-section {
+  margin-bottom: 24px;
+}
+
+.time-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: 14px;
+  margin-bottom: 8px;
+}
+
+.progress-bar-bg {
+  height: 8px;
+  background: #000;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.progress-bar-fill {
+  height: 100%;
+  background: #3fb950;
+  transition: width 1s linear;
+}
+
+.action-text {
+  font-family: 'Fira Code', monospace;
+  background: #000;
+  padding: 16px;
+  border-radius: 4px;
+  color: #58a6ff;
+  font-size: 14px;
+  min-height: 52px;
+  display: flex;
+  align-items: center;
+  margin-bottom: 24px;
+  border-left: 4px solid #58a6ff;
+}
+
+.control-actions {
+  display: flex;
+  gap: 16px;
+}
+
+.btn-stop, .btn-reset {
+  flex: 1;
+  padding: 12px;
+  font-weight: bold;
+  font-size: 14px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.btn-stop {
+  background: #f85149;
+  color: #fff;
+}
+
+.btn-reset {
+  background: #30363d;
+  color: #c9d1d9;
+}
+
+.quick-commands {
+  background: #161b22;
+  padding: 24px;
+  border-radius: 6px;
+  border: 1px solid #30363d;
+  margin-bottom: 24px;
+}
+
+.quick-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+
+.quick-grid button {
+  background: #21262d;
+  border: 1px solid #30363d;
+  color: #fff;
+  padding: 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 13px;
+  transition: background 0.2s;
+}
+
+.quick-grid button:hover {
+  background: #30363d;
+}
+
+.tips {
+  font-size: 12px;
+  color: #8b949e;
+  text-align: center;
+}
+
+/* Auth wall */
+.auth-container {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  background: #0d1117;
+}
+
+.auth-box {
+  background: #161b22;
+  padding: 40px;
+  border-radius: 8px;
+  border: 1px solid #30363d;
+  text-align: center;
+  width: 100%;
+  max-width: 400px;
+}
+
+.auth-box h2 {
+  color: #f85149;
+  margin-top: 0;
+  margin-bottom: 24px;
+}
+
+.auth-box input {
+  width: 100%;
+  padding: 12px;
+  background: #0d1117;
+  border: 1px solid #30363d;
+  color: #fff;
+  border-radius: 4px;
+  margin-bottom: 16px;
+  font-size: 16px;
+}
+
+.auth-box button {
+  width: 100%;
+  padding: 12px;
+  background: #3fb950;
+  color: #fff;
+  border: none;
+  font-weight: bold;
+  border-radius: 4px;
+  cursor: pointer;
+}
