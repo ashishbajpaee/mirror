@@ -6,59 +6,30 @@ import GnnRelationshipPanel from '../components/GnnRelationshipPanel';
 import SensorGrid from '../components/SensorGrid';
 
 const STAGE_REP_SENSORS = ['Feature_0', 'Feature_9', 'Feature_17', 'Feature_26', 'Feature_34', 'Feature_43'];
-const RELATIONSHIP_EDGES = [
-  [0, 1],
-  [1, 2],
-  [2, 3],
-  [3, 4],
-  [4, 5],
-  [0, 2],
-  [2, 4],
-];
+const RELATIONSHIP_EDGES = [[0,1],[1,2],[2,3],[3,4],[4,5],[0,2],[2,4]];
 const BASELINE_SAMPLE_COUNT = 5;
 
-function edgeKey(fromId, toId) {
-  return String(fromId) + '-' + String(toId);
+function edgeKey(a, b) { return a + '-' + b; }
+function safeNumber(v) { const n = Number(v); return Number.isFinite(n) ? n : 0; }
+
+function extractEdgeMap(readings) {
+  const vals = STAGE_REP_SENSORS.map(s => safeNumber(readings[s]));
+  const m = {};
+  RELATIONSHIP_EDGES.forEach(([a, b]) => { m[edgeKey(a, b)] = vals[b] - vals[a]; });
+  return m;
 }
 
-function safeNumber(value) {
-  const parsed = Number(value);
-  return Number.isFinite(parsed) ? parsed : 0;
-}
-
-function extractEdgeMap(sensorReadings) {
-  const nodeValues = STAGE_REP_SENSORS.map((sensorName) => safeNumber(sensorReadings[sensorName]));
-  const map = {};
-
-  RELATIONSHIP_EDGES.forEach(([fromId, toId]) => {
-    map[edgeKey(fromId, toId)] = nodeValues[toId] - nodeValues[fromId];
-  });
-
-  return map;
-}
-
-function meanEdgeMap(edgeMaps) {
-  if (!edgeMaps.length) {
-    return {};
-  }
-
-  const aggregate = {};
-  edgeMaps.forEach((item) => {
-    Object.entries(item).forEach(([key, value]) => {
-      aggregate[key] = (aggregate[key] || 0) + Number(value);
-    });
-  });
-
+function meanEdgeMap(maps) {
+  if (!maps.length) return {};
+  const agg = {};
+  maps.forEach(m => Object.entries(m).forEach(([k, v]) => { agg[k] = (agg[k] || 0) + Number(v); }));
   const out = {};
-  Object.entries(aggregate).forEach(([key, value]) => {
-    out[key] = value / edgeMaps.length;
-  });
-
+  Object.entries(agg).forEach(([k, v]) => { out[k] = v / maps.length; });
   return out;
 }
 
 function AttackTheater() {
-  const { demoMode } = useOutletContext();
+  const { demoMode, isDark, t } = useOutletContext();
   const [searchParams] = useSearchParams();
   const [attacks, setAttacks] = useState([]);
   const [blindspotScores, setBlindspotScores] = useState({});
@@ -69,328 +40,157 @@ function AttackTheater() {
   const [streamStatus, setStreamStatus] = useState('idle');
   const [latestTimestep, setLatestTimestep] = useState(0);
   const [relationshipSnapshot, setRelationshipSnapshot] = useState({
-    integrityScore: 100,
-    edgesBroken: 0,
-    totalEdges: RELATIONSHIP_EDGES.length,
-    gnnAlertLatencySec: null,
-    baselineDetectionRate: null,
-    edgeStates: RELATIONSHIP_EDGES.map(([fromId, toId]) => ({
-      fromId,
-      toId,
-      broken: false,
-      deviation: 0,
-    })),
+    integrityScore: 100, edgesBroken: 0, totalEdges: RELATIONSHIP_EDGES.length,
+    gnnAlertLatencySec: null, baselineDetectionRate: null,
+    edgeStates: RELATIONSHIP_EDGES.map(([a, b]) => ({ fromId: a, toId: b, broken: false, deviation: 0 })),
   });
 
   const socketRef = useRef(null);
-  const previousReadingsRef = useRef({});
-  const relationshipBaselineSamplesRef = useRef([]);
-  const relationshipBaselineRef = useRef({});
-  const gnnAlertFrameRef = useRef(null);
+  const prevRef = useRef({});
+  const baselineSamplesRef = useRef([]);
+  const baselineRef = useRef({});
+  const alertFrameRef = useRef(null);
 
   useEffect(() => {
     let cancelled = false;
-
-    const loadData = async () => {
+    const load = async () => {
       try {
-        const [attacksResponse, blindspotResponse] = await Promise.all([
-          api.get('/attacks?limit=300'),
-          api.get('/blindspot-scores'),
-        ]);
-
+        const [aRes, bRes] = await Promise.all([api.get('/attacks?limit=300'), api.get('/blindspot-scores')]);
         if (cancelled) return;
-
-        const loadedAttacks = attacksResponse.data || [];
-        setAttacks(loadedAttacks);
-        setBlindspotScores(blindspotResponse.data || {});
-
-        const fromQuery = Number(searchParams.get('attackId'));
-        if (!Number.isNaN(fromQuery) && loadedAttacks.some((item) => item.attack_id === fromQuery)) {
-          setSelectedAttackId(fromQuery);
-        } else if (loadedAttacks.length > 0) {
-          setSelectedAttackId(loadedAttacks[0].attack_id);
-        }
-      } catch (error) {
-        setStreamStatus('error_loading');
-      }
+        const loaded = aRes.data || [];
+        setAttacks(loaded);
+        setBlindspotScores(bRes.data || {});
+        const fromQ = Number(searchParams.get('attackId'));
+        if (!Number.isNaN(fromQ) && loaded.some(a => a.attack_id === fromQ)) setSelectedAttackId(fromQ);
+        else if (loaded.length > 0) setSelectedAttackId(loaded[0].attack_id);
+      } catch { setStreamStatus('error_loading'); }
     };
-
-    loadData();
-
-    return () => {
-      cancelled = true;
-    };
+    load();
+    return () => { cancelled = true; };
   }, [searchParams]);
 
-  useEffect(() => {
-    return () => {
-      if (socketRef.current) {
-        socketRef.current.close();
-      }
-    };
-  }, []);
+  useEffect(() => () => { if (socketRef.current) socketRef.current.close(); }, []);
 
-  const selectedAttack = useMemo(
-    () => attacks.find((item) => item.attack_id === Number(selectedAttackId)),
-    [attacks, selectedAttackId]
-  );
+  const selectedAttack = useMemo(() => attacks.find(a => a.attack_id === Number(selectedAttackId)), [attacks, selectedAttackId]);
 
-  const stopStream = () => {
-    if (socketRef.current) {
-      socketRef.current.close();
-      socketRef.current = null;
-    }
-    setStreamStatus('stopped');
-  };
+  const stopStream = () => { if (socketRef.current) { socketRef.current.close(); socketRef.current = null; } setStreamStatus('stopped'); };
 
   const startStream = () => {
-    if (!selectedAttack) {
-      return;
-    }
-
+    if (!selectedAttack) return;
     stopStream();
     setTimeline({ x: [], lines: {} });
-    previousReadingsRef.current = {};
-    relationshipBaselineSamplesRef.current = [];
-    relationshipBaselineRef.current = {};
-    gnnAlertFrameRef.current = null;
+    prevRef.current = {};
+    baselineSamplesRef.current = [];
+    baselineRef.current = {};
+    alertFrameRef.current = null;
     setLatestTimestep(0);
     setRelationshipSnapshot({
-      integrityScore: 100,
-      edgesBroken: 0,
-      totalEdges: RELATIONSHIP_EDGES.length,
+      integrityScore: 100, edgesBroken: 0, totalEdges: RELATIONSHIP_EDGES.length,
       gnnAlertLatencySec: null,
-      baselineDetectionRate:
-        selectedAttack && typeof selectedAttack.detection_rate === 'number'
-          ? Number(selectedAttack.detection_rate)
-          : null,
-      edgeStates: RELATIONSHIP_EDGES.map(([fromId, toId]) => ({
-        fromId,
-        toId,
-        broken: false,
-        deviation: 0,
-      })),
+      baselineDetectionRate: selectedAttack?.detection_rate != null ? Number(selectedAttack.detection_rate) : null,
+      edgeStates: RELATIONSHIP_EDGES.map(([a, b]) => ({ fromId: a, toId: b, broken: false, deviation: 0 })),
     });
 
     const speed = demoMode ? 3 : 1;
-    const wsUrl =
-      getWsBaseUrl() +
-      '/ws/simulation?attack_id=' +
-      String(selectedAttack.attack_id) +
-      '&speed=' +
-      String(speed) +
-      '&duration=260';
-
-    const socket = new WebSocket(wsUrl);
-    socketRef.current = socket;
-
-    socket.onopen = () => {
-      setStreamStatus('running');
-    };
-
-    socket.onclose = () => {
-      setStreamStatus('closed');
-    };
-
-    socket.onerror = () => {
-      setStreamStatus('stream_error');
-    };
-
-    socket.onmessage = (event) => {
+    const ws = new WebSocket(getWsBaseUrl() + '/ws/simulation?attack_id=' + selectedAttack.attack_id + '&speed=' + speed + '&duration=260');
+    socketRef.current = ws;
+    ws.onopen = () => setStreamStatus('running');
+    ws.onclose = () => setStreamStatus('closed');
+    ws.onerror = () => setStreamStatus('stream_error');
+    ws.onmessage = (event) => {
       try {
-        const payload = JSON.parse(event.data);
-        const nextReadings = payload.sensor_readings || {};
-        const frameTimestep = Number(payload.timestep || 0);
-        setLatestTimestep(frameTimestep);
-        setSensorReadings(nextReadings);
-
-        const tracked = Object.keys(nextReadings).slice(0, 6);
-        setTimeline((current) => {
-          const nextX = [...current.x, payload.timestep].slice(-120);
-          const nextLines = { ...current.lines };
-
-          tracked.forEach((sensorName) => {
-            const values = nextLines[sensorName] ? [...nextLines[sensorName]] : [];
-            values.push(Number(nextReadings[sensorName]));
-            nextLines[sensorName] = values.slice(-120);
-          });
-
-          return {
-            x: nextX,
-            lines: nextLines,
-          };
+        const p = JSON.parse(event.data);
+        const nr = p.sensor_readings || {};
+        const ft = Number(p.timestep || 0);
+        setLatestTimestep(ft);
+        setSensorReadings(nr);
+        const tracked = Object.keys(nr).slice(0, 6);
+        setTimeline(c => {
+          const nx = [...c.x, p.timestep].slice(-120);
+          const nl = { ...c.lines };
+          tracked.forEach(s => { nl[s] = [...(nl[s] || []), Number(nr[s])].slice(-120); });
+          return { x: nx, lines: nl };
         });
-
-        const previous = previousReadingsRef.current;
-        const flashes = tracked.filter((sensorName) => {
-          const prev = Number(previous[sensorName] || 0);
-          const curr = Number(nextReadings[sensorName] || 0);
-          const delta = Math.abs(curr - prev);
-          return delta > Math.max(0.5, Math.abs(prev) * 0.08);
-        });
-        setFlashingSensors(flashes);
-        previousReadingsRef.current = nextReadings;
-
-        const edgeMap = extractEdgeMap(nextReadings);
-        if (!Object.keys(relationshipBaselineRef.current).length) {
-          relationshipBaselineSamplesRef.current.push(edgeMap);
-          if (relationshipBaselineSamplesRef.current.length >= BASELINE_SAMPLE_COUNT) {
-            relationshipBaselineRef.current = meanEdgeMap(relationshipBaselineSamplesRef.current);
-          }
+        const prev = prevRef.current;
+        setFlashingSensors(tracked.filter(s => Math.abs(Number(nr[s]||0) - Number(prev[s]||0)) > Math.max(0.5, Math.abs(Number(prev[s]||0))*0.08)));
+        prevRef.current = nr;
+        const em = extractEdgeMap(nr);
+        if (!Object.keys(baselineRef.current).length) {
+          baselineSamplesRef.current.push(em);
+          if (baselineSamplesRef.current.length >= BASELINE_SAMPLE_COUNT) baselineRef.current = meanEdgeMap(baselineSamplesRef.current);
         }
-
-        const baselineMap = relationshipBaselineRef.current;
+        const bm = baselineRef.current;
         const sigma = Number(selectedAttack?.sigma || 1);
-        const deviationThreshold = Math.max(0.26, 0.5 - (sigma * 0.06));
-
-        let brokenCount = 0;
-        let deviationTotal = 0;
-        const edgeStates = RELATIONSHIP_EDGES.map(([fromId, toId]) => {
-          const key = edgeKey(fromId, toId);
-          const baselineValue = Number(baselineMap[key] || 0);
-          const liveValue = Number(edgeMap[key] || 0);
-          const deviation = Math.abs(liveValue - baselineValue) / Math.max(0.8, Math.abs(baselineValue));
-          const broken = Object.keys(baselineMap).length > 0 && deviation > deviationThreshold;
-          deviationTotal += deviation;
-          if (broken) {
-            brokenCount += 1;
-          }
-
-          return {
-            fromId,
-            toId,
-            broken,
-            deviation,
-          };
+        const thresh = Math.max(0.26, 0.5 - sigma * 0.06);
+        let broken = 0, devTotal = 0;
+        const es = RELATIONSHIP_EDGES.map(([a, b]) => {
+          const k = edgeKey(a, b);
+          const dev = Math.abs(Number(em[k]||0) - Number(bm[k]||0)) / Math.max(0.8, Math.abs(Number(bm[k]||0)));
+          const isBroken = Object.keys(bm).length > 0 && dev > thresh;
+          devTotal += dev;
+          if (isBroken) broken++;
+          return { fromId: a, toId: b, broken: isBroken, deviation: dev };
         });
-
-        if (brokenCount > 0 && gnnAlertFrameRef.current === null) {
-          gnnAlertFrameRef.current = frameTimestep;
-        }
-
-        const avgDeviation = edgeStates.length ? deviationTotal / edgeStates.length : 0;
-        const integrityScore = Math.max(
-          0,
-          100 - (brokenCount / RELATIONSHIP_EDGES.length) * 55 - Math.min(45, avgDeviation * 26)
-        );
-
+        if (broken > 0 && alertFrameRef.current === null) alertFrameRef.current = ft;
+        const avgDev = es.length ? devTotal / es.length : 0;
         setRelationshipSnapshot({
-          integrityScore,
-          edgesBroken: brokenCount,
-          totalEdges: RELATIONSHIP_EDGES.length,
-          gnnAlertLatencySec:
-            typeof gnnAlertFrameRef.current === 'number' && gnnAlertFrameRef.current > 0
-              ? gnnAlertFrameRef.current
-              : null,
-          baselineDetectionRate:
-            selectedAttack && typeof selectedAttack.detection_rate === 'number'
-              ? Number(selectedAttack.detection_rate)
-              : null,
-          edgeStates,
+          integrityScore: Math.max(0, 100 - (broken / RELATIONSHIP_EDGES.length) * 55 - Math.min(45, avgDev * 26)),
+          edgesBroken: broken, totalEdges: RELATIONSHIP_EDGES.length,
+          gnnAlertLatencySec: typeof alertFrameRef.current === 'number' && alertFrameRef.current > 0 ? alertFrameRef.current : null,
+          baselineDetectionRate: selectedAttack?.detection_rate != null ? Number(selectedAttack.detection_rate) : null,
+          edgeStates: es,
         });
-      } catch (error) {
-        setStreamStatus('payload_error');
-      }
+      } catch { setStreamStatus('payload_error'); }
     };
   };
 
-  const traces = Object.entries(timeline.lines).map(([sensorName, values]) => ({
-    x: timeline.x.slice(-values.length),
-    y: values,
-    type: 'scatter',
-    mode: 'lines',
-    name: sensorName,
+  const traces = Object.entries(timeline.lines).map(([name, values]) => ({
+    x: timeline.x.slice(-values.length), y: values, type: 'scatter', mode: 'lines', name,
   }));
+
+  const card = { backgroundColor: t.surface, border: `0.5px solid ${t.border}`, borderRadius: 8 };
+  const chip = { backgroundColor: isDark ? '#1e293b' : '#F1F5F9', border: `0.5px solid ${t.border}`, borderRadius: 6 };
+  const plotTheme = { paper_bgcolor: 'transparent', plot_bgcolor: isDark ? 'rgba(15,23,42,0.5)' : 'rgba(241,245,249,0.8)', font: { color: t.text, family: 'Inter' } };
 
   return (
     <section className="space-y-4">
-      <div className="glass-panel rounded-xl p-4">
+      {/* Attack selector */}
+      <div className="p-5" style={card}>
         <div className="grid gap-3 md:grid-cols-[1fr_auto_auto]">
-          <select
-            value={selectedAttackId}
-            onChange={(event) => setSelectedAttackId(Number(event.target.value))}
-            className="rounded-lg border border-white/20 bg-black/20 px-3 py-2 text-sm text-white"
-          >
-            {attacks.map((attack) => (
-              <option key={attack.attack_id} value={attack.attack_id}>
-                #{attack.attack_id} | {attack.attack_type} | {attack.target_stage} | Rank {attack.rank_score}
-              </option>
-            ))}
+          <select value={selectedAttackId} onChange={e => setSelectedAttackId(Number(e.target.value))}
+            className="rounded-lg px-3 py-2 text-[13px] focus:outline-none focus:ring-1 focus:ring-[#2563EB]"
+            style={{ backgroundColor: t.inputBg, border: `0.5px solid ${t.border}`, color: t.text }}>
+            {attacks.map(a => <option key={a.attack_id} value={a.attack_id}>#{a.attack_id} | {a.attack_type} | {a.target_stage} | Rank {a.rank_score}</option>)}
           </select>
-
-          <button
-            type="button"
-            onClick={startStream}
-            className="rounded-lg border border-mint/70 bg-mint/15 px-4 py-2 font-semibold text-white"
-          >
-            Launch Attack
-          </button>
-
-          <button
-            type="button"
-            onClick={stopStream}
-            className="rounded-lg border border-red-300/70 bg-red-300/20 px-4 py-2 font-semibold text-white"
-          >
-            Stop
-          </button>
+          <button onClick={startStream} className="rounded-lg px-4 py-2 text-[13px] font-medium text-white transition hover:opacity-90" style={{ backgroundColor: '#10B981' }}>Launch Attack</button>
+          <button onClick={stopStream} className="rounded-lg px-4 py-2 text-[13px] font-medium text-white transition hover:opacity-90" style={{ backgroundColor: '#EF4444' }}>Stop</button>
         </div>
-
-        <p className="mono mt-2 text-xs uppercase tracking-[0.2em] text-slate-300">
-          Stream status: {streamStatus}
-        </p>
-
-        {selectedAttack ? (
+        <p className="mt-2 text-[11px] uppercase tracking-wider" style={{ color: t.textMuted }}>Stream status: {streamStatus}</p>
+        {selectedAttack && (
           <div className="mt-3 grid gap-2 sm:grid-cols-2 lg:grid-cols-5">
-            <div className="rounded-md border border-white/15 bg-black/20 p-2 text-sm">
-              ID: {selectedAttack.attack_id}
-            </div>
-            <div className="rounded-md border border-white/15 bg-black/20 p-2 text-sm">
-              Type: {selectedAttack.attack_type}
-            </div>
-            <div className="rounded-md border border-white/15 bg-black/20 p-2 text-sm">
-              Stage: {selectedAttack.target_stage}
-            </div>
-            <div className="rounded-md border border-white/15 bg-black/20 p-2 text-sm">
-              Impact: {selectedAttack.impact_score}
-            </div>
-            <div className="rounded-md border border-white/15 bg-black/20 p-2 text-sm">
-              Detection: {selectedAttack.detection_rate}%
-            </div>
+            {[['ID', selectedAttack.attack_id], ['Type', selectedAttack.attack_type], ['Stage', selectedAttack.target_stage], ['Impact', selectedAttack.impact_score], ['Detection', selectedAttack.detection_rate + '%']].map(([l, v]) => (
+              <div key={l} className="rounded-md p-2 text-[13px]" style={chip}>
+                <span style={{ color: t.textMuted }}>{l}: </span><span className="font-medium" style={{ color: t.text }}>{v}</span>
+              </div>
+            ))}
           </div>
-        ) : null}
+        )}
       </div>
 
-      <GnnRelationshipPanel relationshipSnapshot={relationshipSnapshot} streamStatus={streamStatus} />
+      <GnnRelationshipPanel relationshipSnapshot={relationshipSnapshot} streamStatus={streamStatus} isDark={isDark} t={t} />
 
-      <div className="glass-panel rounded-xl p-4">
-        <h3 className="mb-2 text-lg font-semibold">Live Affected Sensor Timeline</h3>
-        <Plot
-          data={traces}
-          layout={{
-            paper_bgcolor: 'rgba(0,0,0,0)',
-            plot_bgcolor: 'rgba(0,0,0,0.18)',
-            font: { color: '#eef3f7' },
-            margin: { t: 20, r: 20, b: 35, l: 45 },
-            xaxis: { title: 'Timestep' },
-            yaxis: { title: 'Value' },
-            legend: { orientation: 'h' },
-          }}
-          style={{ width: '100%', height: '320px' }}
-          useResizeHandler
-          config={{ displaylogo: false }}
-        />
+      {/* Timeline chart */}
+      <div className="p-5" style={card}>
+        <h3 className="text-[14px] font-semibold mb-3" style={{ color: t.text }}>Live Affected Sensor Timeline</h3>
+        <Plot data={traces} layout={{ ...plotTheme, margin: { t: 20, r: 20, b: 35, l: 45 }, xaxis: { title: 'Timestep', gridcolor: t.border }, yaxis: { title: 'Value', gridcolor: t.border }, legend: { orientation: 'h' } }}
+          style={{ width: '100%', height: '320px' }} useResizeHandler config={{ displaylogo: false }} />
       </div>
 
-      <div className="glass-panel rounded-xl p-4">
-        <h3 className="mb-2 text-lg font-semibold">Real-Time Sensor Deviation Grid</h3>
-        <p className="mono mb-2 text-xs uppercase tracking-[0.2em] text-slate-300">
-          Timestep: {latestTimestep || '--'}
-        </p>
-        <SensorGrid
-          sensorReadings={sensorReadings}
-          blindspotScores={blindspotScores}
-          flashingSensors={flashingSensors}
-        />
+      {/* Sensor grid */}
+      <div className="p-5" style={card}>
+        <h3 className="text-[14px] font-semibold mb-1" style={{ color: t.text }}>Real-Time Sensor Deviation Grid</h3>
+        <p className="text-[11px] uppercase tracking-wider mb-3" style={{ color: t.textMuted }}>Timestep: {latestTimestep || '--'}</p>
+        <SensorGrid sensorReadings={sensorReadings} blindspotScores={blindspotScores} flashingSensors={flashingSensors} isDark={isDark} t={t} />
       </div>
     </section>
   );
