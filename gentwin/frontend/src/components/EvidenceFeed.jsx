@@ -1,85 +1,99 @@
 import { useState, useEffect } from 'react';
-import { useOutletContext } from 'react-router-dom';
+import './EvidenceFeed.css';
+import StatusBadge from './StatusBadge';
+import useFullscreen from '../hooks/useFullscreen';
+import { wsUrl } from '../config';
 
 export default function EvidenceFeed() {
-  const { isDark, t } = useOutletContext();
+  useFullscreen();
   const [readings, setReadings] = useState(null);
   const [lastUpdate, setLastUpdate] = useState('');
 
   useEffect(() => {
-    const ws = new WebSocket('ws://localhost:8000/ws');
+    const ws = new WebSocket(wsUrl('/ws'));
+    
     ws.onmessage = (event) => {
       try {
         const data = JSON.parse(event.data);
         if (data.sensors) {
-          setReadings({ ...data.sensors, is_attack: data.is_attack });
+          // Flatten: merge sensors + meta fields into one object for table display
+          const merged = { ...data.sensors, is_attack: data.is_attack };
+          setReadings(merged);
           const now = new Date();
-          setLastUpdate(`${now.getHours().toString().padStart(2,'0')}:${now.getMinutes().toString().padStart(2,'0')}:${now.getSeconds().toString().padStart(2,'0')}.${now.getMilliseconds().toString().padStart(3,'0')}`);
+          setLastUpdate(`${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}:${now.getSeconds().toString().padStart(2, '0')}.${now.getMilliseconds().toString().padStart(3, '0')}`);
         }
-      } catch (e) { console.error("WS parse error", e); }
+      } catch (e) {
+        console.error("WS parse error", e);
+      }
     };
+
     return () => ws.close();
   }, []);
 
-  const card = { backgroundColor: t.surface, border: `0.5px solid ${t.border}`, borderRadius: 8 };
-
   if (!readings) {
     return (
-      <div className="p-8 text-center text-[13px]" style={{ ...card, color: t.textMuted }}>
-        Connecting to live telemetry...
+      <div className="evidence-root">
+        <StatusBadge />
+        <div className="evidence-loading">CONNECTING TO LIVE TELEMETRY...</div>
       </div>
     );
   }
 
+  // Extract sensors/actuators (excluding meta fields like t, is_attack, etc.)
   const skipFields = ['t', 'is_attack', 'detected'];
   const fields = Object.keys(readings).filter(key => !skipFields.includes(key)).sort();
 
   return (
-    <section className="space-y-5">
-      {/* Header */}
-      <div className="p-5 flex flex-wrap items-center justify-between gap-3" style={card}>
-        <div>
-          <h2 className="text-xl font-semibold" style={{ color: t.text }}>Live Sensor Feed</h2>
-          <p className="text-[13px] mt-0.5" style={{ color: t.textSecondary }}>Raw telemetry data from the SWaT process simulator</p>
+    <div className="evidence-root">
+      <StatusBadge />
+      
+      <header className="evidence-header">
+        <h1>LIVE SENSOR FEED</h1>
+        <div className="streaming-badge">
+          <span className="dot"></span> STREAMING
         </div>
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 px-3 py-1.5 rounded-full" style={{
-            backgroundColor: readings.is_attack ? (isDark ? 'rgba(239,68,68,0.1)' : '#FEF2F2') : (isDark ? 'rgba(16,185,129,0.1)' : '#F0FDF4'),
-            border: `0.5px solid ${readings.is_attack ? '#EF4444' : '#10B981'}`,
-          }}>
-            <span style={{ color: readings.is_attack ? '#EF4444' : '#10B981', fontSize: 8 }}>●</span>
-            <span className="text-[11px] font-semibold" style={{ color: readings.is_attack ? '#EF4444' : '#10B981' }}>STREAMING</span>
-          </div>
-        </div>
-      </div>
+      </header>
 
-      {/* Table */}
-      <div className="overflow-x-auto rounded-lg" style={card}>
-        <table className="w-full text-[12px]" style={{ borderCollapse: 'collapse' }}>
+      <div className="evidence-table-container">
+        <table className="evidence-table">
           <thead>
-            <tr style={{ borderBottom: `0.5px solid ${t.border}` }}>
-              {['TAG', 'VALUE (RAW)', 'STATUS'].map(h => (
-                <th key={h} className="text-left px-4 py-2.5 font-semibold uppercase tracking-wider text-[10px]" style={{ color: t.textMuted }}>{h}</th>
-              ))}
+            <tr>
+              <th>TAG</th>
+              <th>VALUE (RAW)</th>
+              <th>STATUS</th>
             </tr>
           </thead>
           <tbody>
             {fields.map(tag => {
               const val = readings[tag];
-              const isAttack = readings.is_attack;
+              let isAnomalous = false;
+              // Very naive anomaly check just for visual impact, or rely on global attack state
+              // The backend doesn't explicitly flag which specific sensor is under attack in the websocket
+              // However, if the entire row has `is_attack`, we highlight the row, but let's highlight based on the overall state
+              if (readings.is_attack) {
+                // If it's an actuator block, the value is probably 0 or 1.
+                // It's a demo, so we'll highlight the whole row red if it's an attack?
+                // Wait, the user asked for:
+                // `Attack rows highlighted in red`
+                // But WS only gives us `is_attack` for the whole array.
+                // We'll highlight all rows slightly if `is_attack` is true, but that might be noisy.
+                // The requirements say: `Attack rows highlighted in red`.
+                // Actually they provided an example:
+                // LIT101  0.623  NORMAL
+                // AIT201  0.891  ATTACK 
+                // Since the websocket doesn't provide which specific sensor is under attack, I'll spoof it or just highlight all if `is_attack` is true. Let's just highlight if standard deviations differ wildly, or simply show ATTACK status if `readings.is_attack` is true and `readings.detected` is on?
+              }
+              
+              // We'll just show the raw value. 
+              const formattedVal = typeof val === 'number' ? val.toFixed(4) : val;
+              const rowStatus = readings.is_attack ? 'ATTACK' : 'NORMAL';
+              const rowClass = readings.is_attack ? 'row-attack' : 'row-normal';
+
               return (
-                <tr key={tag} style={{
-                  borderBottom: `0.5px solid ${t.border}`,
-                  backgroundColor: isAttack ? (isDark ? 'rgba(239,68,68,0.05)' : '#FEF2F2') : 'transparent',
-                }}>
-                  <td className="px-4 py-1.5 font-mono font-medium" style={{ color: t.text }}>{tag}</td>
-                  <td className="px-4 py-1.5 font-mono" style={{ color: '#10B981' }}>{typeof val === 'number' ? val.toFixed(4) : val}</td>
-                  <td className="px-4 py-1.5">
-                    <span className="px-2 py-0.5 rounded text-[10px] font-bold" style={{
-                      backgroundColor: isAttack ? (isDark ? 'rgba(239,68,68,0.15)' : '#FEF2F2') : (isDark ? 'rgba(16,185,129,0.1)' : '#F0FDF4'),
-                      color: isAttack ? '#EF4444' : '#10B981',
-                    }}>{isAttack ? 'ATTACK' : 'NORMAL'}</span>
-                  </td>
+                <tr key={tag} className={rowClass}>
+                  <td>{tag}</td>
+                  <td className="mono">{formattedVal}</td>
+                  <td>{rowStatus}</td>
                 </tr>
               );
             })}
@@ -87,12 +101,11 @@ export default function EvidenceFeed() {
         </table>
       </div>
 
-      {/* Footer */}
-      <div className="flex flex-wrap gap-4 px-4 py-3 text-[11px] rounded-lg" style={card}>
-        <span style={{ color: t.textMuted }}>Last update: <strong style={{ color: t.text }}>{lastUpdate}</strong></span>
-        <span style={{ color: t.textMuted }}>Source: Virtual Sensor Simulator</span>
-        <span style={{ color: t.textMuted }}>Mode: DEMO (real-time streaming)</span>
-      </div>
-    </section>
+      <footer className="evidence-footer">
+        <div>Last update: {lastUpdate}</div>
+        <div>Data source: Virtual Sensor Simulator</div>
+        <div>Mode: DEMO (real-time streaming)</div>
+      </footer>
+    </div>
   );
 }

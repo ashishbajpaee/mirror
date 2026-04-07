@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import './DemoController.css';
-
-const API_BASE = 'http://localhost:8000';
+import { apiUrl } from '../config';
 
 export default function DemoController() {
   const [authed, setAuthed] = useState(false);
@@ -26,7 +25,7 @@ export default function DemoController() {
 
   const pollStatus = useCallback(async () => {
     try {
-      const res = await fetch(`${API_BASE}/api/demo/status`);
+      const res = await fetch(apiUrl('/api/demo/status'));
       const data = await res.json();
       setStatus(data);
 
@@ -49,17 +48,17 @@ export default function DemoController() {
   }, [authed, pollStatus]);
 
   const triggerMoment = async (id) => {
-    await fetch(`${API_BASE}/api/demo/moment/${id}`, { method: 'POST' });
+    await fetch(apiUrl('/api/demo/moment/' + id), { method: 'POST' });
     pollStatus();
   };
 
   const triggerAction = async (endpoint) => {
-    await fetch(`${API_BASE}/api/demo/${endpoint}`, { method: 'POST' });
+    await fetch(apiUrl('/api/demo/' + endpoint), { method: 'POST' });
     pollStatus();
   };
 
   const quickAttack = async (cmd) => {
-    await fetch(`${API_BASE}/api/attacker/execute`, {
+    await fetch(apiUrl('/api/attacker/execute'), {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ command: cmd })
