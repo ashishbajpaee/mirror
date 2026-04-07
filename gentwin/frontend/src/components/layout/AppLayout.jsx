@@ -98,7 +98,7 @@ export default function AppLayout() {
               </div>
             )}
             
-            <div className="p-6">
+            <div className="p-6 flex-1 flex flex-col">
               <Outlet context={{ demoMode, isDark, t }} />
             </div>
           </main>

@@ -67,45 +67,48 @@ function IncidentTimeline() {
       {/* Timeline */}
       <div className="p-5" style={card}>
         {loading ? <p className="text-[13px]" style={{ color: t.textMuted }}>Loading timeline...</p> : (
-          <div className="relative pl-8">
-            {/* Vertical line */}
-            <div className="absolute left-3 top-0 bottom-0 w-0.5" style={{ background: `linear-gradient(to bottom, #10B981, #F59E0B, #EF4444)`, opacity: 0.4 }} />
-
-            <div className="space-y-2">
-              {filtered.map((ev, i) => {
-                const isGap = ev.event_type === 'critical_gap';
-                const time = ev.event_time?.split?.(' ')?.[1]?.slice(0, 8) || ev.event_time?.slice(11, 19) || '--:--:--';
-                return (
-                  <div key={i} className="relative flex items-start gap-3">
-                    <div className="absolute -left-5 top-2.5 h-3 w-3 rounded-full" style={{
-                      border: `2px solid ${typeColor(ev.event_type)}`,
-                      backgroundColor: isGap ? '#EF4444' : 'transparent',
+          <div className="space-y-0">
+            {filtered.map((ev, i) => {
+              const isGap = ev.event_type === 'critical_gap';
+              const time = ev.event_time?.split?.(' ')?.[1]?.slice(0, 8) || ev.event_time?.slice(11, 19) || '--:--:--';
+              return (
+                <div key={i} className="flex gap-4" style={{ minHeight: 44 }}>
+                  {/* Dot + line column */}
+                  <div className="flex flex-col items-center" style={{ width: 20 }}>
+                    <div className="shrink-0 rounded-full" style={{
+                      width: 12, height: 12, marginTop: 10,
+                      border: `2.5px solid ${typeColor(ev.event_type)}`,
+                      backgroundColor: isGap ? '#EF4444' : (isDark ? t.surface : '#FFFFFF'),
                     }} />
-                    <div className="flex-1 rounded-lg px-4 py-2.5 transition" style={{
-                      backgroundColor: isGap ? (isDark ? 'rgba(239,68,68,0.08)' : '#FEF2F2') : (isDark ? '#1e293b' : '#F8FAFC'),
-                      border: `0.5px solid ${isGap ? (isDark ? 'rgba(239,68,68,0.2)' : '#FECACA') : t.border}`,
-                    }}>
-                      <div className="flex flex-wrap items-center gap-2">
-                        <span className="font-mono text-[11px]" style={{ color: t.textMuted }}>{time}</span>
-                        <span className="rounded-full px-2 py-0.5 text-[10px] font-bold uppercase" style={{
-                          backgroundColor: typeColor(ev.event_type) + '18',
-                          color: typeColor(ev.event_type),
-                        }}>
-                          {isGap ? 'CRITICAL GAP' : 'IMPACT EVENT'}
-                        </span>
-                        <span className="rounded px-1.5 py-0.5 text-[11px] font-semibold" style={{ ...chip, color: t.text }}>{ev.target_stage}</span>
-                        <span className="text-[11px]" style={{ color: t.textSecondary }}>{ev.attack_type}</span>
-                        <span className="ml-auto font-mono text-[11px] font-semibold" style={{ color: impactColor(ev.impact_score || 0) }}>
-                          Impact: {(ev.impact_score || 0).toFixed(1)}
-                        </span>
-                        {ev.total_violations > 0 && <span className="font-mono text-[11px]" style={{ color: t.textMuted }}>{ev.total_violations} violations</span>}
-                      </div>
+                    {i < filtered.length - 1 && (
+                      <div className="flex-1" style={{ width: 2, minHeight: 8, backgroundColor: isDark ? '#334155' : '#E2E8F0' }} />
+                    )}
+                  </div>
+                  {/* Event card */}
+                  <div className="flex-1 rounded-lg px-4 py-2 mb-2 transition" style={{
+                    backgroundColor: isGap ? (isDark ? 'rgba(239,68,68,0.08)' : '#FEF2F2') : (isDark ? '#1e293b' : '#F8FAFC'),
+                    border: `0.5px solid ${isGap ? (isDark ? 'rgba(239,68,68,0.2)' : '#FECACA') : t.border}`,
+                  }}>
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="font-mono text-[11px]" style={{ color: t.textMuted }}>{time}</span>
+                      <span className="rounded-full px-2 py-0.5 text-[10px] font-bold uppercase" style={{
+                        backgroundColor: typeColor(ev.event_type) + '18',
+                        color: typeColor(ev.event_type),
+                      }}>
+                        {isGap ? 'CRITICAL GAP' : 'IMPACT EVENT'}
+                      </span>
+                      <span className="rounded px-1.5 py-0.5 text-[11px] font-semibold" style={{ ...chip, color: t.text }}>{ev.target_stage}</span>
+                      <span className="text-[11px]" style={{ color: t.textSecondary }}>{ev.attack_type}</span>
+                      <span className="ml-auto font-mono text-[11px] font-semibold" style={{ color: impactColor(ev.impact_score || 0) }}>
+                        Impact: {(ev.impact_score || 0).toFixed(1)}
+                      </span>
+                      {ev.total_violations > 0 && <span className="font-mono text-[11px]" style={{ color: t.textMuted }}>{ev.total_violations} violations</span>}
                     </div>
                   </div>
-                );
-              })}
-              {filtered.length === 0 && <p className="py-8 text-center text-[13px]" style={{ color: t.textMuted }}>No events match the current filter.</p>}
-            </div>
+                </div>
+              );
+            })}
+            {filtered.length === 0 && <p className="py-8 text-center text-[13px]" style={{ color: t.textMuted }}>No events match the current filter.</p>}
           </div>
         )}
       </div>

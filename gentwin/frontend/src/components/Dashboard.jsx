@@ -1,13 +1,11 @@
 import { useState, useEffect, useRef } from 'react';
-import './Dashboard.css';
+import { useOutletContext } from 'react-router-dom';
 import AttackerGenome from './AttackerGenome';
-import StatusBadge from './StatusBadge';
-import useFullscreen from '../hooks/useFullscreen';
 
 const API_BASE = 'http://localhost:8000';
 
 export default function Dashboard() {
-  useFullscreen();
+  const { isDark, t } = useOutletContext();
   const [sensorData, setSensorData] = useState(null);
   const [alerts, setAlerts] = useState([]);
   const [demoState, setDemoState] = useState(null);
@@ -36,24 +34,17 @@ export default function Dashboard() {
     return () => wsRef.current?.close();
   }, []);
 
-  // Poll for Demo State to trigger overlays
   useEffect(() => {
     const pollDemo = async () => {
       try {
         const res = await fetch(`${API_BASE}/api/demo/status`);
         const data = await res.json();
         setDemoState(data);
-      } catch (e) {
-        // Silent fail normal ops
-      }
+      } catch (e) {}
     };
     const interval = setInterval(pollDemo, 1000);
     return () => clearInterval(interval);
   }, []);
-
-  const handleLaunchTerminal = () => {
-    window.open('/attacker', '_blank');
-  };
 
   const stages = {
     P1: ['FIT101', 'LIT101', 'MV101', 'P101', 'P102'],
@@ -64,46 +55,53 @@ export default function Dashboard() {
     P6: ['FIT601', 'P601', 'P602', 'P603'],
   };
 
-  return (
-    <div className="dash-container">
-      <StatusBadge />
-      <header className="dash-header">
-        <div className="dash-title">
-          <h1>GenTwin</h1>
-          <p>Digital Twin — SWaT Process Monitor</p>
-        </div>
-        <div className="dash-status">
-          <span className={`status-dot ${sensorData?.is_attack ? 'dot-attack' : 'dot-normal'}`} />
-          <span>{sensorData?.is_attack ? 'UNDER ATTACK' : 'NORMAL'}</span>
-        </div>
-        <button className="launch-terminal-btn" style={{marginRight: '8px'}} onClick={handleLaunchTerminal} id="launch-attacker-btn">
-          🔴 TERMINAL KEYBOARD
-        </button>
-        <button className="launch-terminal-btn" onClick={() => window.open('/attack-cards', '_blank')} id="launch-cards-btn" style={{background: '#440a0a', border: '1px solid #FF0000', color: '#FF0000'}}>
-          🔴 OPEN ATTACK PANEL
-        </button>
-      </header>
+  const card = { backgroundColor: t.surface, border: `0.5px solid ${t.border}`, borderRadius: 8 };
+  const chip = { backgroundColor: isDark ? '#1e293b' : '#F1F5F9', border: `0.5px solid ${t.border}`, borderRadius: 6 };
 
-      <main className="dash-main">
-        {/* Sensor Grid */}
-        <section className="sensor-grid-section">
-          <h2>Live Sensor Readings</h2>
-          <div className="stages-grid">
+  return (
+    <section className="space-y-5">
+      {/* Header */}
+      <div className="p-5" style={card}>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="text-xl font-semibold" style={{ color: t.text }}>GenTwin</h2>
+            <p className="text-[13px] mt-0.5" style={{ color: t.textSecondary }}>Digital Twin — SWaT Process Monitor</p>
+          </div>
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 px-3 py-1.5 rounded-full" style={{
+              backgroundColor: sensorData?.is_attack ? (isDark ? 'rgba(239,68,68,0.1)' : '#FEF2F2') : (isDark ? 'rgba(16,185,129,0.1)' : '#F0FDF4'),
+              border: `0.5px solid ${sensorData?.is_attack ? '#EF4444' : '#10B981'}`,
+            }}>
+              <span style={{ color: sensorData?.is_attack ? '#EF4444' : '#10B981', fontSize: 10 }}>●</span>
+              <span className="text-[12px] font-semibold" style={{ color: sensorData?.is_attack ? '#EF4444' : '#10B981' }}>
+                {sensorData?.is_attack ? 'UNDER ATTACK' : 'NORMAL'}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Sensor Grid + Alert Feed + Genome */}
+      <div className="grid gap-4 lg:grid-cols-[1fr_260px_300px]">
+        {/* Sensors */}
+        <div className="p-5" style={card}>
+          <h3 className="text-[12px] font-semibold uppercase tracking-wider mb-4" style={{ color: t.textMuted }}>Live Sensor Readings</h3>
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
             {Object.entries(stages).map(([stage, sensors]) => (
-              <div key={stage} className={`stage-card ${sensorData?.is_attack ? 'stage-alert' : ''}`}>
-                <div className="stage-label">{stage}</div>
-                <div className="stage-sensors">
+              <div key={stage} className="p-3 rounded-lg" style={{
+                ...chip,
+                borderColor: sensorData?.is_attack ? (isDark ? 'rgba(239,68,68,0.3)' : '#FECACA') : t.border,
+              }}>
+                <p className="font-mono text-[14px] font-bold mb-2" style={{ color: '#2563EB' }}>{stage}</p>
+                <div className="space-y-1.5">
                   {sensors.map(s => {
                     const val = sensorData?.sensors?.[s];
                     return (
-                      <div key={s} className="sensor-row">
-                        <span className="sensor-name">{s}</span>
-                        <span className="sensor-value">{val != null ? val.toFixed(3) : '—'}</span>
-                        <div className="sensor-bar-bg">
-                          <div
-                            className="sensor-bar-fill"
-                            style={{ width: `${(val || 0) * 100}%` }}
-                          />
+                      <div key={s} className="grid items-center gap-2" style={{ gridTemplateColumns: '70px 50px 1fr', fontSize: 12 }}>
+                        <span className="font-mono" style={{ color: t.text }}>{s}</span>
+                        <span className="font-mono text-right text-[11px]" style={{ color: '#10B981' }}>{val != null ? val.toFixed(3) : '—'}</span>
+                        <div className="h-1 rounded-full overflow-hidden" style={{ backgroundColor: isDark ? '#334155' : '#E2E8F0' }}>
+                          <div className="h-full rounded-full transition-all duration-500" style={{ width: `${(val || 0) * 100}%`, backgroundColor: '#2563EB' }} />
                         </div>
                       </div>
                     );
@@ -112,55 +110,47 @@ export default function Dashboard() {
               </div>
             ))}
           </div>
-        </section>
+        </div>
 
-        {/* Alerts */}
-        <section className="alerts-section">
-          <h2>Alert Feed</h2>
-          <div className="alerts-list">
+        {/* Alert Feed */}
+        <div className="p-4" style={card}>
+          <h3 className="text-[12px] font-semibold uppercase tracking-wider mb-3" style={{ color: t.textMuted }}>Alert Feed</h3>
+          <div className="space-y-1.5 max-h-[500px] overflow-y-auto">
             {alerts.length === 0 ? (
-              <div className="no-alerts">No alerts — system nominal</div>
+              <p className="text-center py-6 text-[13px]" style={{ color: '#10B981' }}>No alerts — system nominal</p>
             ) : (
               alerts.map((a, i) => (
-                <div key={i} className="alert-item">{a}</div>
+                <div key={i} className="px-2.5 py-1.5 rounded text-[11px] font-mono" style={{
+                  color: '#EF4444',
+                  backgroundColor: isDark ? 'rgba(239,68,68,0.08)' : '#FEF2F2',
+                  borderBottom: `0.5px solid ${t.border}`,
+                }}>{a}</div>
               ))
             )}
           </div>
-        </section>
+        </div>
 
-        {/* Genome Profiler */}
-        <section className="genome-section">
+        {/* Genome */}
+        <div style={card}>
           <AttackerGenome />
-        </section>
-      </main>
+        </div>
+      </div>
 
-      {/* ── Demo Presentation Overlays ── */}
+      {/* Demo Overlays */}
       {demoState && demoState.current_action_text && (
-        <div className="demo-overlay-text slide-in">
-          <h2>{demoState.current_action_text}</h2>
+        <div style={{ position: 'fixed', top: '50%', left: '50%', transform: 'translate(-50%,-50%)', background: 'rgba(0,0,0,0.85)', border: '3px solid #EF4444', borderRadius: 8, padding: '32px 64px', zIndex: 9999, textAlign: 'center' }}>
+          <h2 style={{ fontSize: 40, color: '#fff', margin: 0, fontWeight: 700 }}>{demoState.current_action_text}</h2>
         </div>
       )}
-
-      {demoState && demoState.show_shap && (
-        <div className="demo-overlay-shap slide-up">
-          <h3>SHAP FORENSIC EXPLANATION (MISSING)</h3>
-          <div className="shap-placeholder">
-            <span>[Feature Importance Analysis]</span>
-            <div className="bar-red" style={{width: '60%'}}>LIT101_dev (Not thresholded)</div>
-            <div className="bar-red" style={{width: '40%'}}>AIT201_dev</div>
-          </div>
-        </div>
-      )}
-
       {demoState && demoState.final_stats && demoState.final_stats.length > 0 && (
-        <div className="demo-overlay-stats fade-in">
-          <div className="stats-box">
+        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.9)', zIndex: 10000, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          <div className="text-center space-y-4">
             {demoState.final_stats.map((stat, i) => (
-              <h1 key={i} className={`stat-lead stat-${i}`}>{stat}</h1>
+              <h1 key={i} style={{ fontSize: i === demoState.final_stats.length - 1 ? 48 : 28, color: i === demoState.final_stats.length - 1 ? '#10B981' : '#E2E8F0', margin: 0 }}>{stat}</h1>
             ))}
           </div>
         </div>
       )}
-    </div>
+    </section>
   );
 }
