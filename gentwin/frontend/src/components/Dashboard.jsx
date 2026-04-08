@@ -140,13 +140,21 @@ export default function Dashboard() {
         </div>
       )}
 
-      {demoState && demoState.show_shap && (
+      {demoState && demoState.shap_data && (
         <div className="demo-overlay-shap slide-up">
-          <h3>SHAP FORENSIC EXPLANATION (MISSING)</h3>
-          <div className="shap-placeholder">
-            <span>[Feature Importance Analysis]</span>
-            <div className="bar-red" style={{width: '60%'}}>LIT101_dev (Not thresholded)</div>
-            <div className="bar-red" style={{width: '40%'}}>AIT201_dev</div>
+          <h3>SHAP FORENSIC EXPLANATION</h3>
+          <div className="shap-placeholder" style={{textAlign: 'left'}}>
+            <span style={{marginBottom: '10px', display: 'block'}}>{demoState.shap_data.summary}</span>
+            {demoState.shap_data.top_features.map((f, i) => {
+              const maxVal = Math.max(...demoState.shap_data.top_features.map(f => f.shap_value));
+              const width = `${Math.max(10, (f.shap_value / maxVal) * 100)}%`;
+              return (
+                <div key={i} className="bar-red" style={{width: width, display: 'flex', justifyContent: 'space-between'}}>
+                  <span>{f.sensor}</span>
+                  <span>{f.shap_value.toFixed(3)} ({f.direction})</span>
+                </div>
+              );
+            })}
           </div>
         </div>
       )}

@@ -18,6 +18,7 @@ import MirrorPage from './pages/MirrorPage';
 import DigitalTwin from './pages/DigitalTwin';
 import SecurityIntel from './pages/SecurityIntel';
 import IncidentTimeline from './pages/IncidentTimeline';
+import FederatedLearning from './pages/FederatedLearning';
 
 import AppLayout from './components/layout/AppLayout';
 
@@ -38,6 +39,7 @@ export default function App() {
           <Route path="twin" element={<DigitalTwin />} />
           <Route path="security" element={<SecurityIntel />} />
           <Route path="timeline" element={<IncidentTimeline />} />
+          <Route path="federated" element={<FederatedLearning />} />
 
           {/* Demo pages — rendered inside the same shell */}
           <Route path="demo" element={<DemoLauncher />} />
