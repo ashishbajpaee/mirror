@@ -6,7 +6,7 @@ import { Terminal, Shield, Activity, Fingerprint } from 'lucide-react';
 
 function extractSensorsFromCommand(commandText) {
   const sensors = [];
-  const pattern = /(Feature_\d+)/gi;
+  const pattern = /([A-Z]{2,5}\d{3})/gi;
   let match = pattern.exec(commandText);
   while (match) { sensors.push(match[1]); match = pattern.exec(commandText); }
   return sensors;
@@ -31,7 +31,7 @@ export default function MirrorPage() {
   const [decoyReadings, setDecoyReadings] = useState({});
   const [realReadings, setRealReadings] = useState({});
   const [mirrorStatus, setMirrorStatus] = useState(null);
-  const [commandText, setCommandText] = useState('set Feature_7 to 0.95');
+  const [commandText, setCommandText] = useState('set LIT101 to 0.95');
   const [commandResult, setCommandResult] = useState('');
 
   useEffect(() => {

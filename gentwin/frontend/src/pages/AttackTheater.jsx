@@ -3,9 +3,10 @@ import Plot from 'react-plotly.js';
 import { useSearchParams, useOutletContext } from 'react-router-dom';
 import { api, getWsBaseUrl } from '../api/client';
 import GnnRelationshipPanel from '../components/GnnRelationshipPanel';
+import ShapForensicPanel from '../components/ShapForensicPanel';
 import SensorGrid from '../components/SensorGrid';
 
-const STAGE_REP_SENSORS = ['Feature_0', 'Feature_9', 'Feature_17', 'Feature_26', 'Feature_34', 'Feature_43'];
+const STAGE_REP_SENSORS = ['FIT101', 'AIT201', 'DPIT301', 'AIT401', 'AIT501', 'FIT601'];
 const RELATIONSHIP_EDGES = [[0,1],[1,2],[2,3],[3,4],[4,5],[0,2],[2,4]];
 const BASELINE_SAMPLE_COUNT = 5;
 
@@ -160,7 +161,7 @@ function AttackTheater() {
           <select value={selectedAttackId} onChange={e => setSelectedAttackId(Number(e.target.value))}
             className="rounded-lg px-3 py-2 text-[13px] focus:outline-none focus:ring-1 focus:ring-[#2563EB]"
             style={{ backgroundColor: t.inputBg, border: `0.5px solid ${t.border}`, color: t.text }}>
-            {attacks.map(a => <option key={a.attack_id} value={a.attack_id}>#{a.attack_id} | {a.attack_type} | {a.target_stage} | Rank {a.rank_score}</option>)}
+            {attacks.map(a => <option key={a.attack_id} value={a.attack_id}>#{a.attack_id} | {a.attack_type} | {(a.affected_stages || [a.target_stage]).join('+')} | Rank {a.rank_score}{a.source === 'gan_generated' ? ' ★ GAN' : ''}</option>)}
           </select>
           <button onClick={startStream} className="rounded-lg px-4 py-2 text-[13px] font-medium text-white transition hover:opacity-90" style={{ backgroundColor: '#10B981' }}>Launch Attack</button>
           <button onClick={stopStream} className="rounded-lg px-4 py-2 text-[13px] font-medium text-white transition hover:opacity-90" style={{ backgroundColor: '#EF4444' }}>Stop</button>
@@ -178,6 +179,8 @@ function AttackTheater() {
       </div>
 
       <GnnRelationshipPanel relationshipSnapshot={relationshipSnapshot} streamStatus={streamStatus} isDark={isDark} t={t} />
+
+      <ShapForensicPanel attackId={streamStatus !== 'idle' ? selectedAttackId : null} isDark={isDark} t={t} />
 
       {/* Timeline chart */}
       <div className="p-5" style={card}>

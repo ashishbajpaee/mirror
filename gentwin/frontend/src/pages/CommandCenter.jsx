@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useOutletContext } from 'react-router-dom';
+import { useOutletContext, useNavigate } from 'react-router-dom';
 import { api, getWsBaseUrl } from '../api/client';
 import SensorGrid from '../components/SensorGrid';
 import StageOverview from '../components/StageOverview';
@@ -22,6 +22,7 @@ function stageTone(score) {
 
 function CommandCenter() {
   const { demoMode, isDark, t } = useOutletContext();
+  const navigate = useNavigate();
   const [blindspotScores, setBlindspotScores] = useState({});
   const [sensorReadings, setSensorReadings] = useState({});
   const [connectionLabel, setConnectionLabel] = useState('Connecting...');
@@ -86,18 +87,27 @@ function CommandCenter() {
 
   return (
     <section className="space-y-4">
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 md:grid-cols-4">
         <div className="p-5" style={cardStyle}>
-          <p className="text-[12px] font-medium uppercase tracking-wider mb-2" style={{ color: t.textMuted }}>Blindspot Average</p>
-          <h2 className="text-[28px] font-semibold leading-none tracking-tight" style={{ color: t.text }}>{avgBlindspot}</h2>
+          <p className="text-[12px] font-medium uppercase tracking-wider mb-2" style={{ color: t.textMuted }}>Plant Status</p>
+          <h2 className="text-[20px] font-semibold leading-none tracking-tight" style={{ color: '#10B981' }}>ALL OPERATIONAL</h2>
         </div>
         <div className="p-5" style={cardStyle}>
           <p className="text-[12px] font-medium uppercase tracking-wider mb-2" style={{ color: t.textMuted }}>Sensors Online</p>
-          <h2 className="text-[28px] font-semibold leading-none tracking-tight" style={{ color: t.text }}>{Object.keys(mergedReadings).length || 51}</h2>
+          <h2 className="text-[28px] font-semibold leading-none tracking-tight" style={{ color: '#10B981' }}>{Object.keys(mergedReadings).length || 51} / 51</h2>
         </div>
         <div className="p-5" style={cardStyle}>
-          <p className="text-[12px] font-medium uppercase tracking-wider mb-2" style={{ color: t.textMuted }}>Connection</p>
-          <h2 className="text-[20px] font-semibold tracking-tight mt-1" style={{ color: '#10B981' }}>{connectionLabel}</h2>
+          <p className="text-[12px] font-medium uppercase tracking-wider mb-2" style={{ color: t.textMuted }}>Process Stages</p>
+          <h2 className="text-[28px] font-semibold leading-none tracking-tight" style={{ color: '#10B981' }}>6 Active</h2>
+        </div>
+        <div className="p-5 flex flex-col items-center justify-center" style={cardStyle}>
+          <button
+            onClick={() => navigate('/ops/attacks')}
+            className="w-full rounded-xl px-6 py-3 text-[15px] font-bold text-white uppercase tracking-wider transition-all hover:scale-105 hover:shadow-lg"
+            style={{ background: 'linear-gradient(135deg, #EF4444, #DC2626)', boxShadow: '0 4px 14px rgba(239,68,68,0.4)' }}
+          >
+            ⚡ LAUNCH ATTACK THEATER
+          </button>
         </div>
       </div>
 
@@ -106,7 +116,7 @@ function CommandCenter() {
           <div className="flex items-center gap-2 mb-4 pb-3" style={{ borderBottom: `0.5px solid ${t.border}` }}>
             <h3 className="text-[14px] font-semibold" style={{ color: t.text }}>Live Sensor Grid</h3>
           </div>
-          <SensorGrid sensorReadings={mergedReadings} blindspotScores={blindspotScores} isDark={isDark} t={t} />
+          <SensorGrid sensorReadings={mergedReadings} blindspotScores={{}} isDark={isDark} t={t} />
         </div>
 
         <div className="space-y-4">

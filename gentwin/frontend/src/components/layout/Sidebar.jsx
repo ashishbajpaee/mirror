@@ -2,7 +2,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, Activity, Bug, ShieldAlert, Layers,
   BrainCircuit, FileText, MonitorPlay, SwatchBook,
-  PanelLeftClose, PanelLeftOpen, Network
+  PanelLeftClose, PanelLeftOpen, Network, Shield
 } from 'lucide-react';
 
 const MENU_ITEMS = [
@@ -12,6 +12,7 @@ const MENU_ITEMS = [
   { path: '/ops/mitigation', label: 'Mitigation Engine', icon: ShieldAlert },
   { path: '/ops/mirror', label: 'Active Mirror', icon: Layers },
   { path: '/ops/twin', label: 'Digital Twin', icon: BrainCircuit },
+  { path: '/ops/security', label: 'Security Intel', icon: Shield },
   { path: '/ops/timeline', label: 'Incident Timeline', icon: FileText },
 ];
 
