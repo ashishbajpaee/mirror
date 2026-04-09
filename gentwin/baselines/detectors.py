@@ -16,7 +16,12 @@ from sklearn.ensemble import IsolationForest
 from sklearn.svm import OneClassSVM
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import precision_score, recall_score, f1_score
-import tensorflow as tf
+try:
+    import tensorflow as tf
+    TENSORFLOW_AVAILABLE = True
+except ImportError:
+    TENSORFLOW_AVAILABLE = False
+
 from typing import Dict, Tuple
 import pickle
 
@@ -118,6 +123,10 @@ class LSTMAutoencoderDetector:
                  encoding_dim: int = 32,
                  lstm_units: int = 64,
                  threshold_percentile: float = 95):
+        if not TENSORFLOW_AVAILABLE:
+            print("Warning: TensorFlow is not installed. LSTMAutoencoderDetector will not work.")
+            return
+            
         self.input_dim = int(input_dim)  # Ensure Python int for Keras 3
         self.encoding_dim = int(encoding_dim)
         self.lstm_units = int(lstm_units)
@@ -271,10 +280,14 @@ def create_baseline_detectors(input_dim: int, svm_max_samples: int = 10000) -> D
     detectors = {
         'Threshold (3σ)': ThresholdDetector(n_sigma=3.0),
         'Isolation Forest': IsolationForestDetector(contamination=0.1),
-        'One-Class SVM': OneClassSVMDetector(nu=0.1, max_samples=svm_max_samples),
-        'LSTM Autoencoder': LSTMAutoencoderDetector(input_dim=input_dim)
+        'One-Class SVM': OneClassSVMDetector(nu=0.1, max_samples=svm_max_samples)
     }
     
+    if TENSORFLOW_AVAILABLE:
+        detectors['LSTM Autoencoder'] = LSTMAutoencoderDetector(input_dim=input_dim)
+    else:
+        print("Note: Skipping LSTM Autoencoder detection since TensorFlow is unavailable.")
+        
     return detectors
 
 
