@@ -12,10 +12,25 @@ function IncidentTimeline() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    api.get('/api/p2/timeline?limit=200').then(r => {
-      setTimeline(r.data || { events: [], critical_gaps: 0, total_events: 0 });
-      setLoading(false);
-    }).catch(() => setLoading(false));
+    let active = true;
+    const fetchTimeline = () => {
+      api.get('/api/p2/timeline?limit=200').then(r => {
+        if (active) {
+          setTimeline(r.data || { events: [], critical_gaps: 0, total_events: 0 });
+          setLoading(false);
+        }
+      }).catch(() => {
+        if (active) setLoading(false);
+      });
+    };
+
+    fetchTimeline();
+    const interval = setInterval(fetchTimeline, 2000);
+
+    return () => {
+      active = false;
+      clearInterval(interval);
+    };
   }, []);
 
   const filtered = filter === 'all' ? timeline.events : filter === 'gaps' ? timeline.events.filter(e => e.event_type === 'critical_gap') : timeline.events.filter(e => e.event_type !== 'critical_gap');

@@ -48,7 +48,7 @@ export default function EvidenceFeed() {
       <StatusBadge />
       
       <header className="evidence-header">
-        <h1>LIVE SENSOR FEED</h1>
+        <h1>DEFENDER EVIDENCE FEED</h1>
         <div className="streaming-badge">
           <span className="dot"></span> STREAMING
         </div>

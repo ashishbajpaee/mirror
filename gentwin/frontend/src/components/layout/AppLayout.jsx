@@ -18,6 +18,11 @@ export default function AppLayout() {
 
   useEffect(() => {
     localStorage.setItem('gentwin-theme', isDark ? 'dark' : 'light');
+    if (isDark) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
   }, [isDark]);
 
   const onSubmitWhatIf = async () => {

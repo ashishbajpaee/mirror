@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react';
 import './Dashboard.css';
 import AttackerGenome from './AttackerGenome';
-import StatusBadge from './StatusBadge';
+
 import useFullscreen from '../hooks/useFullscreen';
 import { apiUrl, wsUrl } from '../config';
 
@@ -65,11 +65,10 @@ export default function Dashboard() {
 
   return (
     <div className="dash-container">
-      <StatusBadge />
       <header className="dash-header">
         <div className="dash-title">
-          <h1>GenTwin</h1>
-          <p>Digital Twin — SWaT Process Monitor</p>
+          <h1>GenTwin Defender Watch</h1>
+          <p>Digital Twin — Real-Time SWaT Process Monitor</p>
         </div>
         <div className="dash-status">
           <span className={`status-dot ${sensorData?.is_attack ? 'dot-attack' : 'dot-normal'}`} />
