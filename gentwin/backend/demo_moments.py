@@ -11,7 +11,7 @@ class DemoState:
         self.elapsed_seconds: int = 0
         self.total_seconds: int = 0
         self.current_action_text: Optional[str] = None
-        self.show_shap: bool = False
+        self.shap_data: Optional[dict] = None
         self.final_stats: list = []
         self._task: Optional[asyncio.Task] = None
         self._stop_event: Optional[asyncio.Event] = None
@@ -95,7 +95,15 @@ async def _moment_2():
         if i == 15:
             # Flash "BLINDSPOT DETECTED BY GENTWIN ANALYSIS"
             demo_state.current_action_text = "BLINDSPOT DETECTED BY GENTWIN ANALYSIS"
-            demo_state.show_shap = True
+            demo_state.shap_data = {
+                "summary": "Tree SHAP localized a subtle anomaly cluster around LIT101 and flow correlations.",
+                "top_features": [
+                    {"sensor": "LIT101", "shap_value": 0.45, "direction": "decrease"},
+                    {"sensor": "FIT101", "shap_value": 0.18, "direction": "increase"},
+                    {"sensor": "P101", "shap_value": 0.05, "direction": "decrease"},
+                    {"sensor": "AIT201", "shap_value": 0.01, "direction": "decrease"}
+                ]
+            }
         elif i < 15:
             demo_state.current_action_text = "Attack running silently..."
         await sleep_interruptible(1.0)
@@ -146,12 +154,12 @@ async def _moment_4():
 async def _moment_5():
     demo_state.total_seconds = 15
     stats = [
-        "1,247 attacks generated",
-        "891 detected by standard systems",
-        "356 gaps discovered by GenTwin",
-        "23 critical kill chains found",
-        "356 rules auto-generated",
-        "11 gaps remaining",
+        "1,000 attacks generated",
+        "847 detected by standard systems",
+        "153 gaps discovered by GenTwin",
+        "7 critical cascade chains found",
+        "153 rules auto-generated",
+        "0 gaps remaining",
         "93% improvement in security coverage",
         "The plant is more secure than it was 4 minutes ago."
     ]
@@ -172,7 +180,7 @@ async def _run_moment(moment_number: int):
     demo_state.running_moment = moment_number
     demo_state.elapsed_seconds = 0
     demo_state.current_action_text = None
-    demo_state.show_shap = False
+    demo_state.shap_data = None
     demo_state.final_stats = []
     # Create a fresh event on the current loop
     demo_state._stop_event = asyncio.Event()
@@ -215,7 +223,7 @@ def get_status():
         "elapsed_seconds": demo_state.elapsed_seconds,
         "total_seconds": demo_state.total_seconds,
         "current_action_text": demo_state.current_action_text,
-        "show_shap": demo_state.show_shap,
+        "shap_data": demo_state.shap_data,
         "final_stats": demo_state.final_stats
     }
 
@@ -227,7 +235,7 @@ def stop_moment():
         stop_event.set()
     demo_state.running_moment = None
     demo_state.current_action_text = None
-    demo_state.show_shap = False
+    demo_state.shap_data = None
     return {"status": "stopped"}
 
 

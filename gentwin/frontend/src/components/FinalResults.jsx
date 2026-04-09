@@ -1,7 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import './FinalResults.css';
-
-const API_BASE = 'http://localhost:8000';
+import { apiUrl } from '../config';
 
 function AnimatedCounter({ targetValue, active, isPercent = false }) {
   const [current, setCurrent] = useState(0);
@@ -46,7 +45,7 @@ export default function FinalResults() {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const res = await fetch(`${API_BASE}/api/results/summary`);
+        const res = await fetch(apiUrl('/api/results/summary'));
         const data = await res.json();
         setStats(data);
       } catch (err) {

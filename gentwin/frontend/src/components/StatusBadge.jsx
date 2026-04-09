@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import './StatusBadge.css';
+import { wsUrl } from '../config';
 
 export default function StatusBadge() {
   const [status, setStatus] = useState('NORMAL'); // NORMAL, ALERT
@@ -8,7 +9,7 @@ export default function StatusBadge() {
     // Open a dedicated tiny websocket connection just for the badge status
     // Alternatively, if the parent provides it string we can use a prop.
     // For universal standalone use, let's connect independently.
-    const socket = new WebSocket('ws://localhost:8000/ws');
+    const socket = new WebSocket(wsUrl('/ws'));
 
     socket.onmessage = (event) => {
       try {

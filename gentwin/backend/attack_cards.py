@@ -175,6 +175,23 @@ CARDS = {
     "card_color": "#1a001a",
     "border_color": "#8B008B",
     "expected": "Insider threat pattern"
+  },
+  "card_11": {
+    "id": "card_11",
+    "name": "Coordinated P1+P2 Strike",
+    "emoji": "🔀",
+    "tagline": "LIT101 and FIT101 stopped correlating.",
+    "description": "Simultaneous attack on P1 (LIT101) and P2 (FIT101), carefully crafted to bypass single-sensor threshold rules.",
+    "attack_type": "coordinated",
+    "target_sensor": "LIT101+FIT101",
+    "target_stage": "P1+P2",
+    "intensity": 0.85,
+    "duration": 40,
+    "stealth": "EXTREME",
+    "stealth_color": "#8B0000",
+    "card_color": "#2c0e18",
+    "border_color": "#DC143C",
+    "expected": "Rule-based systems UNDETECTED"
   }
 }
 

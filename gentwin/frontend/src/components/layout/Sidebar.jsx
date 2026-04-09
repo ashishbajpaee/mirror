@@ -2,7 +2,7 @@ import { Link, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, Activity, Bug, ShieldAlert, Layers,
   BrainCircuit, FileText, MonitorPlay, SwatchBook,
-  PanelLeftClose, PanelLeftOpen
+  PanelLeftClose, PanelLeftOpen, Network, Shield
 } from 'lucide-react';
 
 const MENU_ITEMS = [
@@ -12,12 +12,14 @@ const MENU_ITEMS = [
   { path: '/ops/mitigation', label: 'Mitigation Engine', icon: ShieldAlert },
   { path: '/ops/mirror', label: 'Active Mirror', icon: Layers },
   { path: '/ops/twin', label: 'Digital Twin', icon: BrainCircuit },
+  { path: '/ops/security', label: 'Security Intel', icon: Shield },
   { path: '/ops/timeline', label: 'Incident Timeline', icon: FileText },
 ];
 
 const DEMO_ITEMS = [
   { path: '/ops/demo', label: 'Demo Launcher', icon: MonitorPlay },
   { path: '/ops/attack-cards', label: 'Attack Cards', icon: SwatchBook },
+  { path: '/ops/federated', label: 'Federated Learning', icon: Network },
 ];
 
 export default function Sidebar({ collapsed, setCollapsed, isDark, t }) {

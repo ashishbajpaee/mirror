@@ -1,10 +1,10 @@
 const STAGE_NODES = [
-  { id: 0, stage: 'P1', sensor: 'Feature_0', x: 72, y: 160 },
-  { id: 1, stage: 'P2', sensor: 'Feature_9', x: 190, y: 88 },
-  { id: 2, stage: 'P3', sensor: 'Feature_17', x: 308, y: 160 },
-  { id: 3, stage: 'P4', sensor: 'Feature_26', x: 426, y: 88 },
-  { id: 4, stage: 'P5', sensor: 'Feature_34', x: 544, y: 160 },
-  { id: 5, stage: 'P6', sensor: 'Feature_43', x: 662, y: 88 },
+  { id: 0, stage: 'P1', sensor: 'FIT101', x: 72, y: 160 },
+  { id: 1, stage: 'P2', sensor: 'AIT201', x: 190, y: 88 },
+  { id: 2, stage: 'P3', sensor: 'DPIT301', x: 308, y: 160 },
+  { id: 3, stage: 'P4', sensor: 'AIT401', x: 426, y: 88 },
+  { id: 4, stage: 'P5', sensor: 'AIT501', x: 544, y: 160 },
+  { id: 5, stage: 'P6', sensor: 'FIT601', x: 662, y: 88 },
 ];
 
 function formatLatency(v) { return typeof v === 'number' ? v.toFixed(1) + 's' : '--'; }

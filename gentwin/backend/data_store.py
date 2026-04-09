@@ -23,6 +23,11 @@ try:
 except Exception:  # noqa: BLE001
     lime_tabular = None
 
+try:
+    from config import SENSOR_NAMES as _CONFIG_SENSOR_NAMES
+except Exception:  # noqa: BLE001
+    _CONFIG_SENSOR_NAMES = None
+
 
 class DataStore:
     """Load local artifacts and expose API-ready views."""
@@ -41,9 +46,12 @@ class DataStore:
         self.impact_summary = self._load_json("impact_analysis_summary.json", {})
         self.attack_metadata = self._load_json("synthetic_attacks_metadata.json", {})
 
-        self.sensor_names: List[str] = self.attack_metadata.get("sensor_cols") or [
-            "Feature_%d" % i for i in range(51)
-        ]
+        self.sensor_names: List[str] = (
+            list(_CONFIG_SENSOR_NAMES)
+            if _CONFIG_SENSOR_NAMES and len(_CONFIG_SENSOR_NAMES) == 51
+            else self.attack_metadata.get("sensor_cols")
+            or ["Feature_%d" % i for i in range(51)]
+        )
 
         self.attacks_by_id, self.attack_library = self._build_attack_library()
         self.blindspot_scores = self._build_blindspot_scores()
@@ -459,9 +467,10 @@ class DataStore:
             return None
 
     def _parse_lime_condition(self, condition: str) -> Optional[Dict[str, Any]]:
-        simple_pattern = re.compile(r"^\s*(Feature_\d+)\s*(<=|<|>=|>)\s*([+-]?\d+(?:\.\d+)?)\s*$")
-        reverse_pattern = re.compile(r"^\s*([+-]?\d+(?:\.\d+)?)\s*(<=|<|>=|>)\s*(Feature_\d+)\s*$")
-        between_pattern = re.compile(r"^\s*([+-]?\d+(?:\.\d+)?)\s*<\s*(Feature_\d+)\s*<=\s*([+-]?\d+(?:\.\d+)?)\s*$")
+        _SENSOR_PAT = r"[A-Za-z]\w+"
+        simple_pattern = re.compile(r"^\s*(%s)\s*(<=|<|>=|>)\s*([+-]?\d+(?:\.\d+)?)\s*$" % _SENSOR_PAT)
+        reverse_pattern = re.compile(r"^\s*([+-]?\d+(?:\.\d+)?)\s*(<=|<|>=|>)\s*(%s)\s*$" % _SENSOR_PAT)
+        between_pattern = re.compile(r"^\s*([+-]?\d+(?:\.\d+)?)\s*<\s*(%s)\s*<=\s*([+-]?\d+(?:\.\d+)?)\s*$" % _SENSOR_PAT)
 
         between_match = between_pattern.match(condition)
         if between_match:
