@@ -1,5 +1,5 @@
 {
-  "updated_at": "2026-04-07T09:37:13.085620+00:00",
+  "updated_at": "2026-04-08T06:06:35.153151+00:00",
   "rules": [
     {
       "rule_id": "rule_61_1",
@@ -119,6 +119,30 @@
       "confidence": 0.93,
       "attacks_covered": [
         77
+      ]
+    },
+    {
+      "rule_id": "rule_37_6",
+      "attack_id": 37,
+      "generated_at": "2026-04-08T06:06:35.153116+00:00",
+      "condition_text": "IF Feature_44 <= 0.05 AND Feature_28 > 0.09 THEN flag anomaly",
+      "sensors_involved": [
+        "Feature_44",
+        "Feature_28"
+      ],
+      "threshold_dict": {
+        "Feature_44": {
+          "op": "<=",
+          "value": 0.05
+        },
+        "Feature_28": {
+          "op": ">",
+          "value": 0.09
+        }
+      },
+      "confidence": 0.93,
+      "attacks_covered": [
+        37
       ]
     }
   ]
