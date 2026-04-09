@@ -1,0 +1,77 @@
+{
+  "updated_at": "2026-04-08T17:24:21.384439+00:00",
+  "rules": [
+    {
+      "rule_id": "rule_999_1",
+      "attack_id": 999,
+      "generated_at": "2026-04-08T17:24:17.410613+00:00",
+      "condition_text": "IF LIT101 > 0.588 AND AIT503 < 0.425 THEN flag anomaly",
+      "sensors_involved": [
+        "LIT101",
+        "AIT503"
+      ],
+      "threshold_dict": {
+        "LIT101": {
+          "op": ">",
+          "value": 0.588
+        },
+        "AIT503": {
+          "op": "<",
+          "value": 0.425
+        }
+      },
+      "confidence": 0.729,
+      "attacks_covered": [
+        999
+      ]
+    },
+    {
+      "rule_id": "rule_37_2",
+      "attack_id": 37,
+      "generated_at": "2026-04-08T17:24:19.577280+00:00",
+      "condition_text": "IF PIT501 <= 0.05 AND LIT401 > 0.09 THEN flag anomaly",
+      "sensors_involved": [
+        "PIT501",
+        "LIT401"
+      ],
+      "threshold_dict": {
+        "PIT501": {
+          "op": "<=",
+          "value": 0.05
+        },
+        "LIT401": {
+          "op": ">",
+          "value": 0.09
+        }
+      },
+      "confidence": 0.93,
+      "attacks_covered": [
+        37
+      ]
+    },
+    {
+      "rule_id": "rule_77_3",
+      "attack_id": 77,
+      "generated_at": "2026-04-08T17:24:21.384439+00:00",
+      "condition_text": "IF PIT501 > 0.09 AND P602 > 0.08 THEN flag anomaly",
+      "sensors_involved": [
+        "PIT501",
+        "P602"
+      ],
+      "threshold_dict": {
+        "PIT501": {
+          "op": ">",
+          "value": 0.09
+        },
+        "P602": {
+          "op": ">",
+          "value": 0.08
+        }
+      },
+      "confidence": 0.93,
+      "attacks_covered": [
+        77
+      ]
+    }
+  ]
+}
