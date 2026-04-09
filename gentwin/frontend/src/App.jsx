@@ -29,6 +29,13 @@ export default function App() {
         {/* Default → Command Center */}
         <Route path="/" element={<Navigate to="/ops/command" replace />} />
 
+        {/* Demo pages — rendered FULLSCREEN outside the shell */}
+        <Route path="/demo/defender" element={<Dashboard />} />
+        <Route path="/demo/attacker" element={<AttackerTerminal />} />
+        <Route path="/demo/evidence" element={<EvidenceFeed />} />
+        <Route path="/demo/control" element={<DemoController />} />
+        <Route path="/demo/results" element={<FinalResults />} />
+
         {/* All pages inside unified AppLayout shell */}
         <Route path="/ops" element={<AppLayout />}>
           <Route path="command" element={<CommandCenter />} />
@@ -41,20 +48,15 @@ export default function App() {
           <Route path="timeline" element={<IncidentTimeline />} />
           <Route path="federated" element={<FederatedLearning />} />
 
-          {/* Demo pages — rendered inside the same shell */}
+          {/* Demo pages */}
           <Route path="demo" element={<DemoLauncher />} />
           <Route path="attack-cards" element={<AttackCards />} />
-          <Route path="demo/defender" element={<Dashboard />} />
-          <Route path="demo/attacker" element={<AttackerTerminal />} />
-          <Route path="demo/evidence" element={<EvidenceFeed />} />
-          <Route path="demo/control" element={<DemoController />} />
-          <Route path="demo/results" element={<FinalResults />} />
         </Route>
 
         {/* Legacy shortcut routes (outside shell for backward compat) */}
-        <Route path="/attacker" element={<Navigate to="/ops/demo/attacker" replace />} />
+        <Route path="/attacker" element={<Navigate to="/demo/attacker" replace />} />
         <Route path="/attack-cards" element={<Navigate to="/ops/attack-cards" replace />} />
-        <Route path="/defender" element={<Navigate to="/ops/demo/defender" replace />} />
+        <Route path="/defender" element={<Navigate to="/demo/defender" replace />} />
         <Route path="/demo" element={<Navigate to="/ops/demo" replace />} />
         <Route path="/demo/cards" element={<Navigate to="/ops/attack-cards" replace />} />
       </Routes>
